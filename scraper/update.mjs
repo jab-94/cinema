@@ -247,13 +247,19 @@ async function main() {
   const movies = new Map();
   const perDay = Object.fromEntries(days.map((d) => [d, []]));
   const active = new Set();
-  let errors = 0, done = 0;
+  let errors = 0, done = 0, okCount = 0;
 
   await pool(list, CONCURRENCY, async (c) => {
     for (const day of days) {
       let results;
       try { results = await fetchShowtimes(c.id, day); }
-      catch (e) { errors++; console.warn("  !", c.name, day, e.message); continue; }
+      catch (e) {
+        errors++; console.warn("  !", c.name, day, e.message);
+        // AlloCiné refuse tout dès le début → inutile d'insister pendant des heures
+        if (errors >= 15 && okCount === 0) { console.error("AlloCiné refuse les lectures depuis ce serveur. Arrêt."); process.exit(2); }
+        continue;
+      }
+      okCount++;
       for (const r of results) {
         const m = r.movie;
         const mid = String(m.internalId);
@@ -269,7 +275,7 @@ async function main() {
       }
       await sleep(PAUSE_MS);
     }
-    if (++done % 25 === 0) console.log(`  ${done}/${list.length}`);
+    if (++done % 25 === 0) console.log(`  ${done}/${list.length} (${Math.round((Date.now() - t0) / 1000)} s, ${errors} erreurs)`);
   });
 
   if (errors > list.length * days.length * 0.2) { console.error(`Trop d'erreurs (${errors}), on garde les anciennes données.`); process.exit(1); }
