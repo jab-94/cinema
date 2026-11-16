@@ -51,6 +51,23 @@ function dayLabel(d, long = false) {
   const dt = new Date(d + "T12:00:00");
   return new Intl.DateTimeFormat("fr-FR", long ? { weekday: "long", day: "numeric", month: "long" } : { weekday: "short", day: "numeric" }).format(dt);
 }
+// Notes : IMDb sur 10 (m.im = [note, votes]), AlloCiné spectateurs / presse sur 5 (m.us, m.pr = [note, nombre]).
+const num1 = (x) => String(x).replace(".", ",");
+const kVotes = (n) => (n >= 1000 ? `${num1(Math.round(n / 100) / 10)} k` : String(n));
+function ratingsShort(m) {
+  const out = [];
+  if (m?.im) out.push(`<span class="r-imdb">IMDb</span> ${num1(m.im[0])}`);
+  if (m?.us) out.push(`★ ${num1(m.us[0])}`);
+  else if (m?.pr) out.push(`Presse ${num1(m.pr[0])}`);
+  return out.length ? `<div class="ratings">${out.join(" · ")}</div>` : "";
+}
+function ratingsFull(m) {
+  const out = [];
+  if (m?.im) out.push(`<span class="rate"><b class="r-imdb">IMDb</b> ${num1(m.im[0])}<small>/10 · ${kVotes(m.im[1])} votes</small></span>`);
+  if (m?.us) out.push(`<span class="rate"><b>Spectateurs</b> ★ ${num1(m.us[0])}<small>/5 · ${kVotes(m.us[1])} notes</small></span>`);
+  if (m?.pr) out.push(`<span class="rate"><b>Presse</b> ★ ${num1(m.pr[0])}<small>/5 · ${m.pr[1]} critiques</small></span>`);
+  return out.length ? `<div class="rates">${out.join("")}</div>` : "";
+}
 function runtime(m) { if (!m?.d) return ""; const h = Math.floor(m.d / 60), mn = m.d % 60; return h ? `${h} h ${String(mn).padStart(2, "0")}` : `${mn} min`; }
 function isNew(m) { return m?.r && (Date.parse(st.day) - Date.parse(m.r)) / 86400000 < 7 && m.r <= st.day; }
 function poster(m, cls = "") {
@@ -181,6 +198,7 @@ views.films = async (el, token) => {
       <div class="poster">${poster(g.m)}<span class="count">${nb(g.cines.size, "cinéma")}</span>${isNew(g.m) ? `<span class="new">Nouveau</span>` : ""}</div>
       <div class="mt">${esc(g.m?.t)}</div>
       <div class="ms">${esc([runtime(g.m), g.m?.g?.[0]].filter(Boolean).join(" · "))}${st.pos && g.dmin < Infinity ? ` · ${fmtKm(g.dmin)}` : ""}</div>
+      ${ratingsShort(g.m)}
     </button>`).join("")}</div>`;
 };
 
@@ -383,6 +401,7 @@ async function showMovie(mid) {
         ${m?.cast?.length ? `<div class="fs">Avec ${esc(m.cast.join(", "))}</div>` : ""}
         ${m?.r ? `<div class="fs">Sortie : ${esc(new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(m.r + "T12:00:00")))}</div>` : ""}
       </div></div>
+    ${ratingsFull(m)}
     ${syn}
     ${dayChipsInSheet()}
     ${activeFiltersLine()}

@@ -225,7 +225,15 @@ function movieInfo(m) {
     dir: dir.slice(0, 2),
     cast: (m.cast?.edges || m.cast?.nodes || []).map((e) => personName((e.node || e).actor || (e.node || e).person)).filter(Boolean).slice(0, 4),
     syn: m.synopsisFull ? decodeHtml(m.synopsisFull.replace(/<[^>]+>/g, "")).replace(/&nbsp;/g, " ").trim().slice(0, 600) : "",
+    // Notes AlloCiné sur 5 : [note, nombre] (spectateurs = au moins 20 votes, presse = au moins 3 critiques)
+    us: rating(m.stats?.userRating, 20),
+    pr: rating(m.stats?.pressReview, 3),
+    ot: m.originalTitle && m.originalTitle !== m.title ? m.originalTitle : undefined,
+    y: m.data?.productionYear || undefined,
   };
+}
+function rating(r, min) {
+  return r?.score && r.count >= min ? [Math.round(r.score * 10) / 10, r.count] : undefined;
 }
 function personName(p) { return p ? [p.firstName, p.lastName].filter(Boolean).join(" ") : null; }
 function parseRuntime(r) {
