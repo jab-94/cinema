@@ -1,0 +1,87 @@
+# Robot : chaque nuit (et en fin d'après-midi, quand les cinémas publient la semaine suivante),
+# relit toutes les séances d'Île-de-France puis publie l'app sur GitHub Pages.
+# Les séances ne sont PAS enregistrées dans le dépôt (il grossirait chaque jour) : elles sont
+# gardées dans le cache d'Actions et publiées directement. Seule la liste des cinémas est enregistrée.
+name: Séances
+
+on:
+  schedule:
+    - cron: "17 3 * * *"   # ~4 h / 5 h à Paris
+    - cron: "47 15 * * *"  # ~16 h 47 / 17 h 47 à Paris
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      scrape:
+        description: "Relire les séances maintenant"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: seances
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Reprendre les dernières séances
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/days
+            data/movies.json
+            data/meta.json
+          key: seances-${{ github.run_id }}
+          restore-keys: seances-
+
+      - name: Relire les séances
+        id: scrape
+        if: github.event_name == 'schedule' || inputs.scrape || hashFiles('data/meta.json') == ''
+        run: node scraper/update.mjs
+
+      - name: Garder les séances pour la prochaine fois
+        if: steps.scrape.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/days
+            data/movies.json
+            data/meta.json
+          key: seances-${{ github.run_id }}
+
+      - name: Enregistrer la liste des cinémas si elle a changé
+        if: steps.scrape.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/cinemas.json
+          git diff --cached --quiet || (git commit -m "Liste des cinémas mise à jour" && git push)
+
+      - name: Préparer le site
+        run: |
+          mkdir -p _site
+          cp -r index.html manifest.json service-worker.js css js vendor icons data _site/
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

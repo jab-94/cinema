@@ -1,0 +1,554 @@
+[
+ {
+  "pathe": "3 Cinés Robespierre",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0151",
+  "allocine_name": "Les 3 Cinés - Robespierre"
+ },
+ {
+  "pathe": "4 Delta",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0144",
+  "allocine_name": "Cinéma 4 Delta"
+ },
+ {
+  "pathe": "5 Caumartin",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0012",
+  "allocine_name": "Les Cinq Caumartin"
+ },
+ {
+  "pathe": "7 Batignolles",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "P7517",
+  "allocine_name": "7 Batignolles"
+ },
+ {
+  "pathe": "7 Parnassiens",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0025",
+  "allocine_name": "Sept Parnassiens"
+ },
+ {
+  "pathe": "Balzac",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0009",
+  "allocine_name": "Le Balzac"
+ },
+ {
+  "pathe": "Chaplin Denfert",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0153",
+  "allocine_name": "Cinéma Chaplin Denfert"
+ },
+ {
+  "pathe": "Chaplin Saint Lambert",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "W7515",
+  "allocine_name": "Cinéma Chaplin Saint Lambert"
+ },
+ {
+  "pathe": "Christine 21",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0015",
+  "allocine_name": "Christine Cinéma Club"
+ },
+ {
+  "pathe": "Ciné Massy",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0215",
+  "allocine_name": "Cinémassy"
+ },
+ {
+  "pathe": "Cinéma des Cinéastes",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0004",
+  "allocine_name": "Le Cinéma des Cinéastes"
+ },
+ {
+  "pathe": "Cinéma du Panthéon",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0076",
+  "allocine_name": "Cinéma du Panthéon"
+ },
+ {
+  "pathe": "Cinéma Landowski",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0227",
+  "allocine_name": "Cinéma Landowski"
+ },
+ {
+  "pathe": "Cinéma Mac-Mahon",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0172",
+  "allocine_name": "Mac-Mahon"
+ },
+ {
+  "pathe": "Ecoles 21",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0071",
+  "allocine_name": "Écoles Cinéma Club"
+ },
+ {
+  "pathe": "Elysées Lincoln",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0108",
+  "allocine_name": "Elysées Lincoln"
+ },
+ {
+  "pathe": "Epée de Bois",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "W7504",
+  "allocine_name": "Epée de bois"
+ },
+ {
+  "pathe": "Espace 1789",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0123",
+  "allocine_name": "Espace 1789"
+ },
+ {
+  "pathe": "Espace St Michel",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0117",
+  "allocine_name": "Espace Saint-Michel"
+ },
+ {
+  "pathe": "Filmothèque du Quartier Latin",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0020",
+  "allocine_name": "Filmothèque du Quartier Latin"
+ },
+ {
+  "pathe": "Gaumont Disney Village",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "B0176",
+  "allocine_name": "Gaumont Disney Village - IMAX"
+ },
+ {
+  "pathe": "La Géode",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0189",
+  "allocine_name": "La Géode - IMAX"
+ },
+ {
+  "pathe": "La Pléiade",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0127",
+  "allocine_name": "La Pleiade"
+ },
+ {
+  "pathe": "Le Brady Cinéma Théâtre",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0023",
+  "allocine_name": "Le Brady"
+ },
+ {
+  "pathe": "Le Capitole",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0203",
+  "allocine_name": "Cinéma Le Capitole"
+ },
+ {
+  "pathe": "Le Grand Action",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0072",
+  "allocine_name": "Le Grand Action"
+ },
+ {
+  "pathe": "Le Jeu de Paume",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "W7588",
+  "allocine_name": "Jeu de Paume"
+ },
+ {
+  "pathe": "Le Lido",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0142",
+  "allocine_name": "Le Lido"
+ },
+ {
+  "pathe": "Le Lucernaire",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0093",
+  "allocine_name": "Lucernaire"
+ },
+ {
+  "pathe": "Le Saint André des Arts",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0100",
+  "allocine_name": "Saint-André des Arts"
+ },
+ {
+  "pathe": "L'Ecran de Saint-Denis",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0122",
+  "allocine_name": "L'Ecran"
+ },
+ {
+  "pathe": "L'Entrepôt",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0005",
+  "allocine_name": "L'Entrepôt"
+ },
+ {
+  "pathe": "Les 3 Luxembourg",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0095",
+  "allocine_name": "Les 3 Luxembourg"
+ },
+ {
+  "pathe": "Les 3 Pierrots - St Cloud",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0094",
+  "allocine_name": "Les 3 Pierrots"
+ },
+ {
+  "pathe": "Les Capucins",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "B0241",
+  "allocine_name": "Cinéma Les Capucins"
+ },
+ {
+  "pathe": "Luminor Hôtel de Ville",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0013",
+  "allocine_name": "Luminor Hôtel de Ville"
+ },
+ {
+  "pathe": "Max Linder",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0089",
+  "allocine_name": "Max Linder Panorama"
+ },
+ {
+  "pathe": "Nouvel Odéon",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0041",
+  "allocine_name": "Nouvel Odéon"
+ },
+ {
+  "pathe": "Pathé Aéroville",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "W9329",
+  "allocine_name": "Pathé Aéroville - Dolby Cinema"
+ },
+ {
+  "pathe": "Pathé Alésia",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0037",
+  "allocine_name": "Pathé Alésia - Dolby Cinema"
+ },
+ {
+  "pathe": "Pathé Aquaboulevard",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0116",
+  "allocine_name": "Pathé Aquaboulevard"
+ },
+ {
+  "pathe": "Pathé Beaugrenelle",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "W7502",
+  "allocine_name": "Pathé Beaugrenelle - Dolby Cinema"
+ },
+ {
+  "pathe": "Pathé Belle Epine",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "B0143",
+  "allocine_name": "Pathé Thiais - Belle Epine - Dolby Cinema"
+ },
+ {
+  "pathe": "Pathé BNP Paribas",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0060",
+  "allocine_name": "Pathé BNP Paribas (ex Opéra premier)"
+ },
+ {
+  "pathe": "Pathé Boulogne",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "B0247",
+  "allocine_name": "Pathé Boulogne"
+ },
+ {
+  "pathe": "Pathé Ile Seguin",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "G0GJC",
+  "allocine_name": "Pathé Île Seguin - IMAX"
+ },
+ {
+  "pathe": "Pathé Carré Sénart",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "B1139",
+  "allocine_name": "Pathé Carré Sénart - IMAX"
+ },
+ {
+  "pathe": "Pathé Conflans",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "B0250",
+  "allocine_name": "Pathé Conflans Sainte Honorine - IMAX"
+ },
+ {
+  "pathe": "Pathé Convention",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0161",
+  "allocine_name": "Pathé Convention"
+ },
+ {
+  "pathe": "Pathé Dammarie",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "W7719",
+  "allocine_name": "Pathé Dammarie"
+ },
+ {
+  "pathe": "Pathé La villette",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "W7520",
+  "allocine_name": "Pathé La Villette - IMAX"
+ },
+ {
+  "pathe": "Pathé Les Fauvettes",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0024",
+  "allocine_name": "Pathé Les Fauvettes"
+ },
+ {
+  "pathe": "Pathé Levallois",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "W9230",
+  "allocine_name": "Pathé Levallois So Ouest"
+ },
+ {
+  "pathe": "Pathé Massy",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "P9130",
+  "allocine_name": "Pathé Massy - Dolby Cinema"
+ },
+ {
+  "pathe": "Pathé Montparnos",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0052",
+  "allocine_name": "Pathé Montparnos"
+ },
+ {
+  "pathe": "Pathé Palace",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "G02BG",
+  "allocine_name": "Pathé Palace"
+ },
+ {
+  "pathe": "Pathé Parnasse",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0158",
+  "allocine_name": "Pathé Parnasse - Premium"
+ },
+ {
+  "pathe": "Pathé Quai d'Ivry",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "B0258",
+  "allocine_name": "Pathé Quai d'Ivry - IMAX"
+ },
+ {
+  "pathe": "Pathé Saint Denis",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "B0242",
+  "allocine_name": "Pathé Saint-Denis Stade de France"
+ },
+ {
+  "pathe": "Pathé Wepler",
+  "groupe": "Les Cinémas Pathé",
+  "cinepass": true,
+  "cinecartes": true,
+  "allocine": "C0179",
+  "allocine_name": "Pathé Wepler"
+ },
+ {
+  "pathe": "Publicis cinémas",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C6336",
+  "allocine_name": "Publicis Cinémas"
+ },
+ {
+  "pathe": "Studio des ursulines",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0083",
+  "allocine_name": "Studio des Ursulines"
+ },
+ {
+  "pathe": "L'Archipel",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0134",
+  "allocine_name": "L'Archipel"
+ },
+ {
+  "pathe": "Majestic Bastille",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0139",
+  "allocine_name": "Majestic Bastille"
+ },
+ {
+  "pathe": "Majestic Passy",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0120",
+  "allocine_name": "Majestic Passy"
+ },
+ {
+  "pathe": "L'Escurial Panorama",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0147",
+  "allocine_name": "Escurial"
+ },
+ {
+  "pathe": "Les Reflets Medicis",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0074",
+  "allocine_name": "Reflet Medicis"
+ },
+ {
+  "pathe": "L'Arlequin",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0054",
+  "allocine_name": "L'Arlequin"
+ },
+ {
+  "pathe": "Saint Germain des Prés",
+  "groupe": "Cinéma indépendant",
+  "cinepass": true,
+  "cinecartes": false,
+  "allocine": "C0096",
+  "allocine_name": "Le Saint Germain des Prés"
+ }
+]

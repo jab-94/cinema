@@ -1,0 +1,5 @@
+data/days/
+data/movies.json
+data/meta.json
+_site/
+node_modules/
