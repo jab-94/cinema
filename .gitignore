@@ -4,3 +4,4 @@ data/meta.json
 _site/
 node_modules/
 data/imdb-ids.json
+data/last.json

@@ -37,6 +37,12 @@ jobs:
         run: |
           git fetch --depth 1 origin apercu-data
           git checkout FETCH_HEAD -- data
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Derniers jours (films qui quittent l'affiche)
+        continue-on-error: true
+        run: node scraper/update.mjs --postprocess
       - name: Préparer le site
         run: |
           mkdir -p _site

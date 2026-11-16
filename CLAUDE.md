@@ -59,6 +59,14 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
   une seule requête POST, cache `data/imdb-ids.json` dans le cache Actions ; Wikidata limite parfois à 1 req/min →
   attente 65 s) + fichier public `datasets.imdbws.com/title.ratings.tsv.gz`. Jamais bloquant. ~36 des 40 films les plus
   programmés ont une note IMDb (manquent surtout les sorties très récentes). `--ratings-only` : ajoute IMDb à movies.json.
+- **Derniers jours (v12)** : `markLastDays()` (aussi `--postprocess`, lancé à CHAQUE publication dans les 2 workflows).
+  Fin de programmation publiée d'un cinéma = dernier jour avec ≥ 40 % de ses séances habituelles (sinon quelques
+  avant-premières lointaines faussent tout). Un film « part » d'un cinéma si absent ≥ 2 jours avant cette fin, ou dès
+  un mercredi (changement de programme), et seulement s'il était vraiment à l'affiche (≥ 4 séances sur ≥ 2 jours, ou
+  dernière séance aujourd'hui d'un film ≥ 10 séances). `data/last.json` = {cinéma: {film: dernier jour}} ;
+  `movies[id].ld` si le film part de TOUS ses cinémas (≥ 8 séances). App : badge orange « Derniers jours / Dernier
+  jour » sur l'affiche, encart dans la fiche, « Dernière séance ici … » par cinéma, filtre « Derniers jours seulement ».
+  Règles réglées le 17 nov. (1er test : 346 films marqués à tort, surtout ciné-clubs → resserré).
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
   cache du robot ; la vieille copie de la branche `apercu-data` (16 nov.) ne sert que si le cache est vide.

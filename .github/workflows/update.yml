@@ -80,6 +80,10 @@ jobs:
           for i in 1 2 3; do git pull --rebase origin main && git push && exit 0; sleep 5; done
           exit 1
 
+      - name: Derniers jours (films qui quittent l'affiche)
+        continue-on-error: true
+        run: node scraper/update.mjs --postprocess
+
       - name: Préparer le site
         run: |
           mkdir -p _site

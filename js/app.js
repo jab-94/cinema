@@ -17,12 +17,12 @@ const HOURS = [0, 12, 14, 18, 20];
 const RADII = [2, 5, 10, 20, 30, 50];
 
 // ------------------------------------------------------------ État
-const data = { meta: null, cinemas: new Map(), movies: {}, days: {} };
+const data = { meta: null, cinemas: new Map(), movies: {}, days: {}, last: {} };
 const st = {
   tab: "films",
   day: null,
   q: "",
-  f: Object.assign({ cinepass: false, version: "", near: false, fromHour: 0, formats: [], deps: [] }, pref("filters", {})),
+  f: Object.assign({ cinepass: false, version: "", near: false, fromHour: 0, formats: [], deps: [], leaving: false }, pref("filters", {})),
   radius: pref("radius", 10),
   pos: pref("position", null), // { lat, lng, label } — gardé uniquement sur ce téléphone
   hidePast: pref("hide-past", true),
@@ -73,6 +73,18 @@ function isNew(m) { return m?.r && (Date.parse(st.day) - Date.parse(m.r)) / 8640
 function poster(m, cls = "") {
   return m?.p ? `<img src="${esc(m.p)}" alt="" loading="lazy" decoding="async" class="${cls}" referrerpolicy="no-referrer">` : `<div class="ph">${esc(m?.t || "")}</div>`;
 }
+// Derniers jours (calculés par le robot) : dernier jour du film dans ce cinéma s'il en part, sinon null.
+function leavingDay(cid, mid) { const d = data.last[cid]?.[mid] || data.movies[mid]?.ld; return d && d >= today() ? d : null; }
+function filmLeaving(m) { return m?.ld && m.ld >= today() ? m.ld : null; }
+function leavingTag(day, here = false) {
+  if (!day) return "";
+  const when = day === st.day ? (here ? "Dernier jour ici" : "Dernier jour") : `${here ? "Dernière séance ici" : "Dernière séance"} ${dayLabel(day).toLowerCase()}`;
+  return `<span class="leaving">${esc(when)}</span>`;
+}
+function whenText(d) {
+  const l = dayLabel(d, true);
+  return l === "Aujourd'hui" ? "aujourd'hui" : l === "Demain" ? "demain" : `le ${l}`;
+}
 function cpBadge(c) { return c?.cp ? `<span class="cp-badge" title="Carte CinéPass acceptée">CinéPass</span>` : ""; }
 function cineSub(c) { return [c.city || DEPTS[c.zip?.slice(0, 2)], fmtKm(distOf(c))].filter(Boolean).join(" · "); }
 
@@ -98,6 +110,7 @@ async function rowsFor(day, { ignoreQuery = false, movieId = null, cinemaId = nu
   for (const [cid, mid, time, v, fmts, url] of raw) {
     if (movieId && mid !== movieId) continue;
     if (cinemaId && cid !== cinemaId) continue;
+    if (f.leaving && !leavingDay(cid, mid)) continue;
     const c = data.cinemas.get(cid);
     if (!c) continue;
     if (f.cinepass && !c.cp) continue;
@@ -153,7 +166,7 @@ function renderChips() {
   const f = st.f;
   const on = { cinepass: f.cinepass, vf: f.version === "VF", vost: f.version === "VOST", near: f.near, evening: f.fromHour === 18 };
   document.querySelectorAll("#quick .toggle").forEach((b) => b.classList.toggle("on", !!on[b.dataset.f]));
-  const n = f.formats.length + f.deps.length + (f.fromHour && f.fromHour !== 18 ? 1 : 0);
+  const n = f.formats.length + f.deps.length + (f.fromHour && f.fromHour !== 18 ? 1 : 0) + (f.leaving ? 1 : 0);
   $("#filter-count").textContent = n || "";
 }
 
@@ -195,7 +208,7 @@ views.films = async (el, token) => {
   el.innerHTML = `<p class="meta-line">${esc(dayLabel(st.day, true))} · ${nb(list.length, "film")} · ${nb(rows.length, "séance")}</p>
   <div class="grid">${list.map((g) => `
     <button class="movie" data-movie="${g.mid}" type="button">
-      <div class="poster">${poster(g.m)}<span class="count">${nb(g.cines.size, "cinéma")}</span>${isNew(g.m) ? `<span class="new">Nouveau</span>` : ""}</div>
+      <div class="poster">${poster(g.m)}<span class="count">${nb(g.cines.size, "cinéma")}</span>${isNew(g.m) && !filmLeaving(g.m) ? `<span class="new">Nouveau</span>` : ""}${filmLeaving(g.m) ? `<span class="last-days">${filmLeaving(g.m) === st.day ? "Dernier jour" : "Derniers jours"}</span>` : ""}</div>
       <div class="mt">${esc(g.m?.t)}</div>
       <div class="ms">${esc([runtime(g.m), g.m?.g?.[0]].filter(Boolean).join(" · "))}${st.pos && g.dmin < Infinity ? ` · ${fmtKm(g.dmin)}` : ""}</div>
       ${ratingsShort(g.m)}
@@ -384,6 +397,7 @@ function activeFiltersLine() {
   if (f.version) parts.push(f.version);
   if (f.near && st.pos) parts.push(`≤ ${st.radius} km`);
   if (f.fromHour) parts.push(`après ${f.fromHour} h`);
+  if (f.leaving) parts.push("derniers jours");
   parts.push(...f.formats, ...f.deps.map((d) => DEPTS[d]));
   return parts.length ? `<p class="small">Filtres : ${esc(parts.join(", "))}</p>` : "";
 }
@@ -403,12 +417,13 @@ async function showMovie(mid) {
       </div></div>
     ${ratingsFull(m)}
     ${syn}
+    ${filmLeaving(m) ? `<p class="leaving-note">⏳ Quitte l'affiche : dernière séance prévue ${esc(whenText(filmLeaving(m)))}.</p>` : ""}
     ${dayChipsInSheet()}
     ${activeFiltersLine()}
     <p class="meta-line">${nb(groups.length, "cinéma")} · ${nb(rows.length, "séance")}${st.pos ? " · du plus proche au plus loin" : ""}</p>
     <div class="list">${groups.map((g) => `
       <div class="glass card">
-        <button class="card-head" data-cinema="${g.c.id}" type="button"><div><div class="name">${esc(g.c.name)}${cpBadge(g.c)}</div><div class="sub">${esc(cineSub(g.c))}</div></div><div class="right">›</div></button>
+        <button class="card-head" data-cinema="${g.c.id}" type="button"><div><div class="name">${esc(g.c.name)}${cpBadge(g.c)}</div><div class="sub">${esc(cineSub(g.c))}</div>${filmLeaving(m) ? "" : leavingTag(data.last[g.c.id]?.[mid], true)}</div><div class="right">›</div></button>
         <div class="times">${g.rows.map(timeChip).join("")}</div>
       </div>`).join("") || emptyState()}</div>`, "movie", mid);
 }
@@ -434,7 +449,7 @@ async function showCinema(cid) {
       <div class="film-row">
         <button class="thumb" data-movie="${mid}" type="button">${poster(data.movies[mid])}</button>
         <div class="info"><button class="ft" data-movie="${mid}" type="button">${esc(data.movies[mid]?.t)}</button>
-          <div class="fs">${esc(runtime(data.movies[mid]))}</div>
+          <div class="fs">${esc(runtime(data.movies[mid]))}</div>${leavingTag(leavingDay(cid, mid), true)}
           <div class="times">${rs.map(timeChip).join("")}</div></div>
       </div>`).join("") || emptyState()}</div>`, "cinema", cid);
 }
@@ -446,6 +461,7 @@ function showFilters() {
     <div class="f-block"><h4>Carte</h4><div class="chips"><button class="chip ${f.cinepass ? "on" : ""}" data-ff="cinepass" type="button">CinéPass acceptée</button></div></div>
     <div class="f-block"><h4>Version</h4><div class="chips">${[["", "Toutes"], ["VF", "VF"], ["VOST", "VO / VOST"]].map(([v, l]) => `<button class="chip ${f.version === v ? "on" : ""}" data-fv="${v}" type="button">${l}</button>`).join("")}</div></div>
     <div class="f-block"><h4>À partir de</h4><div class="chips">${HOURS.map((h) => `<button class="chip ${f.fromHour === h ? "on" : ""}" data-fh="${h}" type="button">${h ? h + " h" : "Toute la journée"}</button>`).join("")}</div></div>
+    <div class="f-block"><h4>À l'affiche</h4><div class="chips"><button class="chip ${f.leaving ? "on" : ""}" data-ff="leaving" type="button">Derniers jours seulement</button></div></div>
     <div class="f-block"><h4>Format</h4><div class="chips">${FORMATS.map((x) => `<button class="chip ${f.formats.includes(x) ? "on" : ""}" data-fx="${esc(x)}" type="button">${esc(x)}</button>`).join("")}</div></div>
     <div class="f-block"><h4>Département</h4><div class="chips">${Object.entries(DEPTS).map(([k, l]) => `<button class="chip ${f.deps.includes(k) ? "on" : ""}" data-fd="${k}" type="button">${esc(l)} <span class="sub">${k}</span></button>`).join("")}</div></div>
     <div class="f-block"><h4>Près de moi</h4><div class="chips">${st.pos
@@ -516,7 +532,7 @@ document.addEventListener("click", async (e) => {
   else if (d.fh !== undefined) st.f.fromHour = Number(d.fh);
   else if (d.fx) toggleIn(st.f.formats, d.fx);
   else if (d.fd) toggleIn(st.f.deps, d.fd);
-  else if (d.reset !== undefined) Object.assign(st.f, { cinepass: false, version: "", near: false, fromHour: 0, formats: [], deps: [] });
+  else if (d.reset !== undefined) Object.assign(st.f, { cinepass: false, version: "", near: false, fromHour: 0, formats: [], deps: [], leaving: false });
   if (d.ff || d.fv !== undefined || d.fh !== undefined || d.fx || d.fd || d.reset !== undefined) { saveFilters(); renderChips(); sheet.dirty = true; refreshSheet(); return; }
   // réglages
   if (d.geo !== undefined) useGeolocation();
@@ -575,6 +591,7 @@ async function boot() {
   try {
     const [meta, cinemas, movies] = await Promise.all([getJson("data/meta.json"), getJson("data/cinemas.json"), getJson("data/movies.json")]);
     data.meta = meta; data.movies = movies;
+    data.last = await getJson("data/last.json").catch(() => ({})); // films qui quittent un cinéma (facultatif)
     for (const c of cinemas) data.cinemas.set(c.id, c);
   } catch (e) {
     $("#tab-films").innerHTML = `<div class="empty"><b>Données indisponibles</b>Vérifie ta connexion puis rouvre l'app.</div>`;
