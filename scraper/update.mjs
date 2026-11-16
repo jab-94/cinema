@@ -294,7 +294,8 @@ async function main() {
         for (const [key, shows] of Object.entries(r.showtimes || {})) {
           for (const s of shows || []) {
             if (!s.startsAt?.startsWith(day)) continue;
-            const ticket = s.data?.ticketing?.find((t) => t.urls?.length)?.urls[0] || null;
+            let ticket = s.data?.ticketing?.find((t) => t.urls?.length)?.urls[0] || null;
+            if (ticket) ticket = ticket.replace(/^https:\/\/s\.pathe\.fr\/en\//, "https://s.pathe.fr/fr/"); // Pathé en français
             perDay[day].push([c.id, mid, s.startsAt.slice(11, 16), versionOf(key, s), formatsOf(s), ticket]);
             active.add(c.id);
           }

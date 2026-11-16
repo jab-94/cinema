@@ -97,7 +97,7 @@ async function rowsFor(day, { ignoreQuery = false, movieId = null, cinemaId = nu
       const hay = norm(`${m?.t} ${c.name} ${c.city} ${c.zip}`);
       if (!tokens.every((t) => hay.includes(t))) continue;
     }
-    out.push({ c, m, mid, time, v, fmts, url, d });
+    out.push({ c, m, mid, time, v, fmts, url: frLink(url), d });
   }
   out.sort((a, b) => tkey(a.time).localeCompare(tkey(b.time)));
   return out;
@@ -183,6 +183,9 @@ views.films = async (el, token) => {
       <div class="ms">${esc([runtime(g.m), g.m?.g?.[0]].filter(Boolean).join(" · "))}${st.pos && g.dmin < Infinity ? ` · ${fmtKm(g.dmin)}` : ""}</div>
     </button>`).join("")}</div>`;
 };
+
+// AlloCiné donne pour Pathé des liens en anglais (s.pathe.fr/en/…) : l'app Pathé s'ouvrait en anglais.
+const frLink = (u) => (u ? u.replace(/^https:\/\/s\.pathe\.fr\/en\//, "https://s.pathe.fr/fr/") : u);
 
 function timeChip(r) {
   const tags = [r.v, ...r.fmts.filter((x) => x !== "Dolby Atmos")].join(" · ");
