@@ -50,8 +50,11 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 - Séances de nuit (< 5 h) rangées après 23 h (`tkey`), y compris pour « Après 18 h » et les séances passées.
 - Tests Playwright : le Chromium du conteneur rend le WebGL en logiciel (~1 s/image) → passer `bg-style` à `plain`.
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
-- `.github/workflows/apercu.yml` (lancement à la main) : publie le code de `main` avec la copie de séances de la
-  branche `apercu-data` (utile quand le robot n'a pas encore de séances en cache).
+- `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
+  cache du robot ; la vieille copie de la branche `apercu-data` (16 nov.) ne sert que si le cache est vide.
+- 1er passage réussi depuis GitHub (16 nov.) : 54 min, 24 847 séances, 703 films, 294 cinémas, 0 erreur, jamais
+  freiné à 1,2 s d'intervalle. L'étape « Enregistrer la liste des cinémas » fait `pull --rebase` avant de pousser
+  (des commits arrivent pendant l'heure de lecture) et ne bloque jamais la publication (`continue-on-error`).
 
 ## Confidentialité
 - La position de l'utilisateur (géolocalisation ou ville choisie) reste en localStorage, jamais envoyée.

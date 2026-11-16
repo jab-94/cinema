@@ -1,5 +1,5 @@
-# Aperçu : publie l'app avec une copie des séances enregistrée sur la branche « apercu-data »
-# (utile quand le robot n'a pas encore fini). Lancement à la main seulement.
+# Aperçu : republie l'app tout de suite (lancement à la main), avec les DERNIÈRES séances lues par le robot
+# (cache) ; la vieille copie de la branche « apercu-data » ne sert que s'il n'y a encore rien en cache.
 name: Aperçu
 
 on:
@@ -22,7 +22,17 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Copie des séances
+      - name: Dernières séances du robot
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/days
+            data/movies.json
+            data/meta.json
+          key: seances-${{ github.run_id }}
+          restore-keys: seances-
+      - name: Copie de secours (seulement si le robot n'a encore rien lu)
+        if: hashFiles('data/meta.json') == ''
         run: |
           git fetch --depth 1 origin apercu-data
           git checkout FETCH_HEAD -- data

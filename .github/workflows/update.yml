@@ -67,11 +67,16 @@ jobs:
 
       - name: Enregistrer la liste des cinémas si elle a changé
         if: steps.scrape.outcome == 'success'
+        continue-on-error: true   # ne doit jamais empêcher la publication des séances
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/cinemas.json
-          git diff --cached --quiet || (git commit -m "Liste des cinémas mise à jour" && git push)
+          git diff --cached --quiet && exit 0
+          git commit -m "Liste des cinémas mise à jour"
+          # du code a pu être envoyé pendant le passage (~1 h) : on se remet à jour avant d'envoyer
+          for i in 1 2 3; do git pull --rebase origin main && git push && exit 0; sleep 5; done
+          exit 1
 
       - name: Préparer le site
         run: |
