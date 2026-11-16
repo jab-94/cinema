@@ -33,7 +33,7 @@ export const background = {
   styles: Object.entries(STYLES).map(([k, s]) => [k, s.label]),
   get style() { return styleKey; },
   get speed() { return speed; },
-  setStyle() {}, setSpeed() {},
+  setStyle() {}, setSpeed() {}, pause() {}, resume() {},
 };
 
 export function startBackground() {
@@ -108,9 +108,13 @@ export function startBackground() {
     simT += Math.min((now - last) / 1000, 0.1) * rate(); last = now;
     draw(); raf = requestAnimationFrame(frame);
   }
-  function start() { if (!raf && !still && rate() > 0 && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+  let paused = false;
+  function start() { if (!raf && !paused && !still && rate() > 0 && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } }
   function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
   background.setStyle = (k) => { if (!STYLES[k]) return; styleKey = k; save("bg-style", k); stop(); apply(); };
+  // Pause pendant qu'un panneau couvre l'écran : sinon l'iPhone recalcule le flou du panneau à chaque image.
+  background.pause = () => { paused = true; stop(); };
+  background.resume = () => { paused = false; start(); };
   background.setSpeed = (v) => { speed = Math.max(0, Math.min(100, Number(v) || 0)); save("bg-speed", speed); rate() > 0 ? start() : stop(); };
   document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
   addEventListener("resize", () => { if (!raf) draw(); });

@@ -256,17 +256,72 @@ views.settings = async (el) => {
 };
 
 // ------------------------------------------------------------ Feuilles (fiche film, cinéma, filtres)
-const sheet = { el: null, kind: null, id: null };
+// Fermeture : le panneau glisse vers le bas (0,25 s). La page derrière n'est redessinée que si
+// quelque chose a changé pendant que le panneau était ouvert (jour, filtres) : sinon rien à refaire.
+const sheet = { kind: null, id: null, dirty: false, closing: false };
+const $sheet = $("#sheet"), $panel = $(".sheet-panel"), $backdrop = $(".sheet-backdrop");
 function openSheet(html, kind, id) {
-  sheet.kind = kind; sheet.id = id;
+  const reopen = !$sheet.hidden && !sheet.closing;
+  sheet.kind = kind; sheet.id = id; sheet.closing = false;
   $("#sheet-body").innerHTML = html;
-  $("#sheet").hidden = false;
-  document.body.style.overflow = "hidden";
+  $sheet.classList.remove("closing");
+  $panel.style.transform = ""; $backdrop.style.opacity = "";
+  if (!reopen) { $sheet.hidden = false; $panel.scrollTop = 0; }
+  else $panel.scrollTop = 0;
+  document.body.classList.add("sheet-open");
+  background.pause();
 }
 function closeSheet() {
-  $("#sheet").hidden = true; sheet.kind = null;
-  document.body.style.overflow = "";
+  if ($sheet.hidden || sheet.closing) return;
+  sheet.closing = true; sheet.kind = null;
+  $sheet.classList.add("closing");
+  $panel.style.transform = ""; $backdrop.style.opacity = "";
+  const done = () => {
+    if (!sheet.closing) return;
+    sheet.closing = false;
+    $sheet.hidden = true; $sheet.classList.remove("closing");
+    document.body.classList.remove("sheet-open");
+    background.resume();
+    if (sheet.dirty) { sheet.dirty = false; render(); }
+  };
+  setTimeout(done, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 240);
 }
+
+// Glisser le panneau vers le bas pour le fermer (depuis la poignée, ou n'importe où quand le contenu est en haut).
+(() => {
+  let y0 = 0, t0 = 0, dy = 0, dragging = false, armed = false;
+  $panel.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1 || sheet.closing) return;
+    armed = $panel.scrollTop <= 0 || !!e.target.closest(".sheet-grab");
+    dragging = false; dy = 0; y0 = e.touches[0].clientY; t0 = Date.now();
+  }, { passive: true });
+  $panel.addEventListener("touchmove", (e) => {
+    if (!armed) return;
+    const d = e.touches[0].clientY - y0;
+    if (!dragging) {
+      if (d > 6 && $panel.scrollTop <= 0) { dragging = true; $panel.classList.add("dragging"); }
+      else if (d < -6) { armed = false; return; }
+      else return;
+    }
+    e.preventDefault(); // le panneau suit le doigt au lieu de faire défiler
+    dy = Math.max(0, d);
+    $panel.style.transform = `translateY(${dy}px)`;
+    $backdrop.style.opacity = String(Math.max(0, 1 - dy / ($panel.offsetHeight || 600)));
+  }, { passive: false });
+  const end = () => {
+    if (!dragging) { armed = false; return; }
+    dragging = armed = false;
+    $panel.classList.remove("dragging");
+    const speed = dy / Math.max(1, Date.now() - t0); // px/ms
+    if (dy > 110 || (dy > 30 && speed > 0.5)) {
+      // part depuis la position du doigt
+      $panel.style.transform = `translateY(${dy}px)`;
+      requestAnimationFrame(() => closeSheet());
+    } else { $panel.style.transform = ""; $backdrop.style.opacity = ""; }
+  };
+  $panel.addEventListener("touchend", end);
+  $panel.addEventListener("touchcancel", end);
+})();
 function dayChipsInSheet() {
   return `<div class="chips sheet-days">${(data.meta?.days || []).filter((d) => d >= today())
     .map((d) => `<button class="chip ${d === st.day ? "on" : ""}" data-day="${d}" type="button">${esc(dayLabel(d))}</button>`).join("")}</div>`;
@@ -373,12 +428,16 @@ function cityPosition(city) {
 function toggleIn(arr, v) { const i = arr.indexOf(v); i < 0 ? arr.push(v) : arr.splice(i, 1); }
 
 document.addEventListener("click", async (e) => {
+  if (e.target.closest("[data-close]")) { closeSheet(); return; } // ✕, poignée, fond grisé, « Voir les résultats »
   const t = e.target.closest("button, a");
   if (!t) return;
   const d = t.dataset;
-  if (e.target.closest("[data-close]") && (d.close !== undefined)) { closeSheet(); render(); return; }
   if (d.tab) { st.tab = d.tab; st.nowLimit = 60; scrollTo(0, 0); render(); return; }
-  if (d.day) { st.day = d.day; st.nowLimit = 60; await render(); if (sheet.kind) refreshSheet(); return; }
+  if (d.day) {
+    st.day = d.day; st.nowLimit = 60;
+    if (sheet.kind) { sheet.dirty = true; renderChips(); refreshSheet(); } else render();
+    return;
+  }
   if (d.movie) { e.preventDefault(); showMovie(d.movie); return; }
   if (d.cinema) { showCinema(d.cinema); return; }
   if (d.more !== undefined) { st.nowLimit += 100; render(); return; }
@@ -402,7 +461,7 @@ document.addEventListener("click", async (e) => {
   else if (d.fx) toggleIn(st.f.formats, d.fx);
   else if (d.fd) toggleIn(st.f.deps, d.fd);
   else if (d.reset !== undefined) Object.assign(st.f, { cinepass: false, version: "", near: false, fromHour: 0, formats: [], deps: [] });
-  if (d.ff || d.fv !== undefined || d.fh !== undefined || d.fx || d.fd || d.reset !== undefined) { saveFilters(); renderChips(); refreshSheet(); return; }
+  if (d.ff || d.fv !== undefined || d.fh !== undefined || d.fx || d.fd || d.reset !== undefined) { saveFilters(); renderChips(); sheet.dirty = true; refreshSheet(); return; }
   // réglages
   if (d.geo !== undefined) useGeolocation();
   if (d.geoClear !== undefined) setPosition(null);
@@ -411,8 +470,7 @@ document.addEventListener("click", async (e) => {
   if (d.bg) { background.setStyle(d.bg); render(); }
 });
 document.addEventListener("click", (e) => { const p = e.target.closest("[data-expand]"); if (p) p.classList.toggle("clamp"); });
-$("#sheet").addEventListener("click", (e) => { if (e.target.matches(".sheet-backdrop, .sheet-grab, .sheet-close")) { closeSheet(); render(); } });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && sheet.kind) { closeSheet(); render(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && sheet.kind) closeSheet(); });
 document.addEventListener("change", (e) => {
   if (e.target.id === "city-pick" && e.target.value) setPosition(cityPosition(e.target.value));
 });
