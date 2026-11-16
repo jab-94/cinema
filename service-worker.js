@@ -1,10 +1,10 @@
 // Augmenter à chaque publication (avec APP_VERSION dans js/version.js), sinon les téléphones gardent l'ancienne version.
-const CACHE_VERSION = "cine-v6";
+const CACHE_VERSION = "cine-v7";
 const CORE = [
   "./", "index.html", "css/app.css", "manifest.json",
   "js/app.js", "js/version.js", "js/viewport.js", "js/background.js", "js/shaders.js",
   "vendor/liquidglass.js", "vendor/liquidglass.css",
-  "icons/icon-192-v1.png", "icons/icon-512-v1.png", "icons/apple-touch-icon-v1.png",
+  "icons/icon-192-v2.png", "icons/icon-512-v2.png", "icons/apple-touch-icon-v2.png",
 ];
 const POSTERS = "posters-v1";
 

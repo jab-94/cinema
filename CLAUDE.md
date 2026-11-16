@@ -33,7 +33,7 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 ## Livraison
 - Augmenter `CACHE_VERSION` (service-worker.js, `cine-vN`) ET `APP_VERSION` (js/version.js, `vN`) à chaque publication.
 - Service worker : réseau d'abord pour le code et les données ; cache d'abord pour vendor/, icônes et affiches.
-- Nouvelle icône → nouveau nom de fichier (`-v2.png`) : iOS garde l'ancienne en cache.
+- Icône (v7) : « ticket » choisi par l'utilisateur, `tools/icon/gen_icon.py ticket` (même style verre que Sport/Budget), fichiers `*-v2.png`. Nouvelle icône → nouveau nom de fichier (`-v3.png`) : iOS garde l'ancienne en cache.
 - CSP dans index.html : images autorisées seulement depuis `*.acsta.net` (affiches AlloCiné).
 - `vendor/liquidglass.*` : copiés de l'app Sport (construits dans le dépôt Budget, `tools/web-vendor/build-liquidglass.mjs`).
 - `js/shaders.js` : shaders « Mesh drift » / « Silk » repris de Sport. Fonds (`js/background.js`, Réglages) : Uni,
