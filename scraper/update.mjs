@@ -26,20 +26,45 @@ const opt = (name, def) => { const i = args.indexOf(name); return i < 0 ? def : 
 const DAYS = Number(opt("--days", 7));
 const LIMIT = Number(opt("--limit", 0));
 const FORCE_INVENTORY = args.includes("--inventory");
-const CONCURRENCY = 3;
-const PAUSE_MS = 250;
+// Rythme prudent : AlloCiné freine vite les serveurs de GitHub (HTTP 429 « trop de demandes »).
+// Une lecture à la fois, au moins MIN_INTERVAL_MS entre deux ; l'intervalle double à chaque 429
+// (jusqu'à 30 s) puis redescend doucement quand ça repasse.
+const CONCURRENCY = Number(process.env.CONCURRENCY || 1);
+const MIN_INTERVAL_MS = Number(process.env.MIN_INTERVAL_MS || 1200);
+const PAUSE_MS = 0;
+let interval = MIN_INTERVAL_MS, nextSlot = 0, throttled = 0;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function get(url, { json = true, tries = 4 } = {}) {
+async function waitTurn() {
+  const now = Date.now();
+  const at = Math.max(now, nextSlot);
+  nextSlot = at + interval;
+  if (at > now) await sleep(at - now);
+}
+
+async function get(url, { json = true, tries = 6 } = {}) {
   for (let t = 1; ; t++) {
+    await waitTurn();
+    let status = 0;
     try {
-      const res = await fetch(url, { headers: { "User-Agent": UA, Accept: json ? "application/json" : "text/html" } });
+      const res = await fetch(url, { headers: { "User-Agent": UA, Accept: json ? "application/json" : "text/html", "Accept-Language": "fr-FR,fr;q=0.9" } });
+      status = res.status;
+      if (res.status === 429 || res.status === 503) {
+        throttled++;
+        interval = Math.min(30000, interval * 2);
+        const ra = Number(res.headers.get("retry-after"));
+        const wait = ra > 0 ? Math.min(ra * 1000, 120000) : 15000 * t;
+        nextSlot = Math.max(nextSlot, Date.now() + wait);
+        throw new Error(`HTTP ${res.status}`);
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return json ? await res.json() : await res.text();
+      const out = json ? await res.json() : await res.text();
+      interval = Math.max(MIN_INTERVAL_MS, Math.round(interval * 0.9));
+      return out;
     } catch (e) {
       if (t >= tries) throw new Error(`${url} : ${e.message}`);
-      await sleep(1500 * t);
+      if (status !== 429 && status !== 503) await sleep(1500 * t);
     }
   }
 }
@@ -228,7 +253,9 @@ async function main() {
   console.log("Cinémas…");
   let cinemas = await readJson(path.join(DATA, "cinemas.json"), null);
   const meta = await readJson(path.join(DATA, "meta.json"), {});
-  const inventoryAge = meta.inventoryAt ? (Date.now() - Date.parse(meta.inventoryAt)) / 86400000 : Infinity;
+  // Sans date connue (cache vide), la liste enregistrée dans le dépôt suffit : on ne la refait pas.
+  const inventoryAge = meta.inventoryAt ? (Date.now() - Date.parse(meta.inventoryAt)) / 86400000 : (cinemas ? 0 : Infinity);
+  if (cinemas && !meta.inventoryAt) meta.inventoryAt = new Date().toISOString();
   if (!cinemas || FORCE_INVENTORY || inventoryAge > 7) {
     cinemas = await buildInventory(cinemas);
     meta.inventoryAt = new Date().toISOString();
@@ -256,7 +283,7 @@ async function main() {
       catch (e) {
         errors++; console.warn("  !", c.name, day, e.message);
         // AlloCiné refuse tout dès le début → inutile d'insister pendant des heures
-        if (errors >= 15 && okCount === 0) { console.error("AlloCiné refuse les lectures depuis ce serveur. Arrêt."); process.exit(2); }
+        if (errors >= 5 && okCount === 0) { console.error("AlloCiné refuse les lectures depuis ce serveur. Arrêt."); process.exit(2); }
         continue;
       }
       okCount++;
@@ -275,7 +302,7 @@ async function main() {
       }
       await sleep(PAUSE_MS);
     }
-    if (++done % 25 === 0) console.log(`  ${done}/${list.length} (${Math.round((Date.now() - t0) / 1000)} s, ${errors} erreurs)`);
+    if (++done % 25 === 0) console.log(`  ${done}/${list.length} (${Math.round((Date.now() - t0) / 1000)} s, ${errors} erreurs, freiné ${throttled} fois, rythme ${(interval / 1000).toFixed(1)} s)`);
   });
 
   if (errors > list.length * days.length * 0.2) { console.error(`Trop d'erreurs (${errors}), on garde les anciennes données.`); process.exit(1); }
