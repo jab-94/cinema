@@ -44,6 +44,10 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 - Panneaux (fiche film/cinéma, filtres) : se ferment en glissant vers le bas (depuis la poignée, ou partout quand le
   contenu est en haut), animation 0,25 s ; la page derrière n'est redessinée que si le jour/les filtres ont changé
   (`sheet.dirty`) ; fond animé en pause tant qu'un panneau est ouvert (flou du panneau sinon recalculé à chaque image).
+- **Fluidité (v5)** : PAS de backdrop-filter sur les cartes des listes (544 flous faisaient ramer l'iPhone) : flou
+  seulement sur l'en-tête, la barre d'onglets et les panneaux. Un onglet n'est reconstruit que si sa signature
+  (`viewSignature` : jour, recherche, filtres, position…) a changé ; `content-visibility:auto` sur les cartes.
+- Séances de nuit (< 5 h) rangées après 23 h (`tkey`), y compris pour « Après 18 h » et les séances passées.
 - Tests Playwright : le Chromium du conteneur rend le WebGL en logiciel (~1 s/image) → passer `bg-style` à `plain`.
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : publie le code de `main` avec la copie de séances de la

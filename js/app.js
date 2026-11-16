@@ -39,6 +39,8 @@ function km(a, b) {
 }
 function distOf(c) { return st.pos && c?.lat != null ? km(st.pos, c) : null; }
 function fmtKm(d) { return d == null ? "" : d < 1 ? `${Math.round(d * 1000 / 50) * 50} m` : `${d < 10 ? d.toFixed(1).replace(".", ",") : Math.round(d)} km`; }
+// Séances de nuit (avant 5 h) : elles terminent la soirée, on les range après 23 h ("00:30" → "24:30").
+const tkey = (t) => (t < "05:00" ? String(Number(t.slice(0, 2)) + 24) + t.slice(2) : t);
 function today() { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()); }
 function nowHM() { return new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" }).format(new Date()); }
 function dayLabel(d, long = false) {
@@ -86,8 +88,8 @@ async function rowsFor(day, { ignoreQuery = false, movieId = null, cinemaId = nu
     if (f.version === "VF" && v !== "VF") continue;
     if (f.version === "VOST" && v === "VF") continue;
     if (f.formats.length && !f.formats.some((x) => fmts.includes(x))) continue;
-    if (from && time < from) continue;
-    if (past && time < past) continue;
+    if (from && tkey(time) < from) continue;
+    if (past && tkey(time) < past) continue;
     const d = distOf(c);
     if (f.near && st.pos && (d == null || d > st.radius)) continue;
     const m = data.movies[mid];
@@ -97,6 +99,7 @@ async function rowsFor(day, { ignoreQuery = false, movieId = null, cinemaId = nu
     }
     out.push({ c, m, mid, time, v, fmts, url, d });
   }
+  out.sort((a, b) => tkey(a.time).localeCompare(tkey(b.time)));
   return out;
 }
 
@@ -112,7 +115,19 @@ async function render() {
   $("#page-title").textContent = { films: "Films", now: "Bientôt", cinemas: "Cinémas", settings: "Réglages" }[st.tab];
   $("#toolbar").hidden = st.tab === "settings";
   renderChips();
-  await views[st.tab]?.($(`#tab-${st.tab}`), token);
+  // Un onglet déjà affiché n'est reconstruit que si ce qu'il montre a changé (jour, recherche, filtres,
+  // position…) : changer d'onglet est alors instantané (v5).
+  const sig = viewSignature(st.tab);
+  const el = $(`#tab-${st.tab}`);
+  if (st.tab !== "settings" && el.dataset.sig === sig) return;
+  await views[st.tab]?.(el, token);
+  if (token === renderToken) el.dataset.sig = sig;
+}
+function viewSignature(tab) {
+  const base = [data.meta?.updatedAt, st.day, st.q, JSON.stringify(st.f), st.radius, st.pos ? `${st.pos.lat},${st.pos.lng}` : "", st.hidePast];
+  if (tab === "now") base.push(st.nowLimit, Math.floor(Date.now() / 60000)); // séances passées : à la minute près
+  if (tab === "films" && st.hidePast && st.day === today()) base.push(Math.floor(Date.now() / 600000));
+  return base.join("|");
 }
 
 function renderChips() {
@@ -155,7 +170,7 @@ views.films = async (el, token) => {
 
 function timeChip(r) {
   const tags = [r.v, ...r.fmts.filter((x) => x !== "Dolby Atmos")].join(" · ");
-  const past = r.time < nowHM() && st.day === today();
+  const past = tkey(r.time) < nowHM() && st.day === today();
   const inner = `${r.time}<small>${esc(tags)}</small>`;
   return r.url
     ? `<a class="time ${past ? "past" : ""}" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
@@ -174,7 +189,7 @@ function groupByCinema(rows) {
 views.now = async (el, token) => {
   const rows = await rowsFor(st.day);
   if (token !== renderToken) return;
-  rows.sort((a, b) => a.time.localeCompare(b.time) || (a.d ?? 1e9) - (b.d ?? 1e9));
+  rows.sort((a, b) => tkey(a.time).localeCompare(tkey(b.time)) || (a.d ?? 1e9) - (b.d ?? 1e9));
   if (!rows.length) { el.innerHTML = emptyState(); return; }
   const shown = rows.slice(0, st.nowLimit);
   const hint = !st.pos ? `<p class="meta-line">Astuce : ajoute ta position dans Réglages puis active « Près de moi » pour ne voir que les séances proches.</p>` : "";
@@ -365,7 +380,7 @@ async function showCinema(cid) {
   const rows = await rowsFor(st.day, { ignoreQuery: true, cinemaId: cid });
   const byMovie = new Map();
   for (const r of rows) { if (!byMovie.has(r.mid)) byMovie.set(r.mid, []); byMovie.get(r.mid).push(r); }
-  const list = [...byMovie.entries()].sort((a, b) => a[1][0].time.localeCompare(b[1][0].time));
+  const list = [...byMovie.entries()].sort((a, b) => tkey(a[1][0].time).localeCompare(tkey(b[1][0].time)));
   const maps = c.lat != null ? `https://maps.apple.com/?q=${encodeURIComponent(c.name)}&ll=${c.lat},${c.lng}` : `https://maps.apple.com/?q=${encodeURIComponent(c.name + " " + c.address + " " + c.zip)}`;
   openSheet(`
     <h3>${esc(c.name)}${cpBadge(c)}</h3>

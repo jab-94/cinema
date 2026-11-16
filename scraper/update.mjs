@@ -310,7 +310,8 @@ async function main() {
   // Écriture
   await mkdir(path.join(DATA, "days"), { recursive: true });
   for (const [day, rows] of Object.entries(perDay)) {
-    rows.sort((a, b) => a[2].localeCompare(b[2]));
+    const tk = (t) => (t < "05:00" ? String(Number(t.slice(0, 2)) + 24) + t.slice(2) : t); // nuit après 23 h
+    rows.sort((a, b) => tk(a[2]).localeCompare(tk(b[2])));
     await writeJson(path.join(DATA, "days", `${day}.json`), rows);
   }
   // Supprime les jours passés
