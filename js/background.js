@@ -21,12 +21,16 @@ const STYLES = {
     shape: [1.38, 0.43, 0.80, 0.02], surface: [1.57, 0.96, -0.09, 1.04], finish: [0.00, 0.28, 0.021, 0.03],
     transform: [5293.0, 5.25, 0.01, 1.0], space: [0.08, -0.07, 0.0, 0.0], cursor: [0.0, 0.0, 0.30, 0.46] },
 };
-const DEFAULT_STYLE = "bordeaux", DEFAULT_SPEED = 50;
+// Vitesse 0–100 : 50 = vitesse d'origine du shader. Par défaut 0 = fond FIXE (dessiné une seule fois,
+// rien ne tourne : demande de l'utilisateur pour la batterie, v4). Le curseur de Réglages permet de l'animer.
+const DEFAULT_STYLE = "bordeaux", NORMAL_SPEED = 50, DEFAULT_SPEED = 0;
 
 const pref = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, String(v)); } catch {} };
 
 let styleKey = STYLES[pref("bg-style", DEFAULT_STYLE)] ? pref("bg-style", DEFAULT_STYLE) : DEFAULT_STYLE;
+// v4 : passage unique au fond fixe, même si une vitesse avait déjà été choisie avant.
+if (pref("bg-fixed-v4", null) === null) { save("bg-speed", DEFAULT_SPEED); save("bg-fixed-v4", 1); }
 let speed = Math.max(0, Math.min(100, Number(pref("bg-speed", DEFAULT_SPEED)) || 0));
 
 export const background = {
@@ -64,6 +68,7 @@ export function startBackground() {
   // Pointeur normalisé -1..1 (y vers le haut, comme gl_FragCoord) ; présence lissée 0 → 1.
   const ptr = { x: 0, y: 0, tx: 0, ty: 0, on: 0, presence: 0 };
   const onMove = (e) => {
+    if (rate() <= 0) return; // fond fixe : pas d'effet au doigt (il redessinerait l'écran à chaque mouvement)
     ptr.tx = (e.clientX / innerWidth) * 2 - 1; ptr.ty = 1 - (e.clientY / innerHeight) * 2; ptr.on = 1;
     if (!raf) draw();
   };
@@ -72,7 +77,7 @@ export function startBackground() {
   addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") ptr.on = 0; }, { passive: true });
   document.addEventListener("pointerleave", () => { ptr.on = 0; });
   addEventListener("blur", () => { ptr.on = 0; });
-  const rate = () => (cur?.frag ? cur.timeScale * (speed / DEFAULT_SPEED) : 0);
+  const rate = () => (cur?.frag ? cur.timeScale * (speed / NORMAL_SPEED) : 0);
   function apply() {
     cur = STYLES[styleKey];
     if (!cur.frag) { stop(); canvas.classList.remove("on"); return; }
@@ -97,7 +102,8 @@ export function startBackground() {
     if (cur.pointer) {
       // suivi doux du doigt, présence qui apparaît / s'efface en ~0,3 s
       ptr.x += (ptr.tx - ptr.x) * 0.12; ptr.y += (ptr.ty - ptr.y) * 0.12;
-      ptr.presence += ((still ? 0 : ptr.on) - ptr.presence) * 0.08;
+      ptr.presence += ((still || rate() <= 0 ? 0 : ptr.on) - ptr.presence) * 0.08;
+      if (rate() <= 0) ptr.presence = 0;
       gl.uniform4f(uSpace, cur.space[0], cur.space[1], ptr.x, ptr.y);
       gl.uniform4f(uCursor, ptr.presence, cur.cursor[1], cur.cursor[2], cur.cursor[3]);
     }
@@ -115,7 +121,10 @@ export function startBackground() {
   // Pause pendant qu'un panneau couvre l'écran : sinon l'iPhone recalcule le flou du panneau à chaque image.
   background.pause = () => { paused = true; stop(); };
   background.resume = () => { paused = false; start(); };
-  background.setSpeed = (v) => { speed = Math.max(0, Math.min(100, Number(v) || 0)); save("bg-speed", speed); rate() > 0 ? start() : stop(); };
+  background.setSpeed = (v) => {
+    speed = Math.max(0, Math.min(100, Number(v) || 0)); save("bg-speed", speed);
+    if (rate() > 0) start(); else { stop(); ptr.presence = 0; draw(); } // fixe : une dernière image nette, puis plus rien
+  };
   document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
   addEventListener("resize", () => { if (!raf) draw(); });
   canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); stop(); canvas.classList.remove("on"); });

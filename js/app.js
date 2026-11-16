@@ -242,7 +242,7 @@ views.settings = async (el) => {
   <div class="glass set-group">
     <div class="set-row"><div class="lbl">Fond d'écran</div>
       <div class="seg" id="bg-style">${background.styles.map(([k, l]) => `<button class="${k === background.style ? "on" : ""}" data-bg="${k}" type="button">${esc(l)}</button>`).join("")}</div></div>
-    <div class="set-row"><div class="lbl">Vitesse du fond<input id="bg-speed" type="range" min="0" max="100" value="${background.speed}"></div></div>
+    <div class="set-row"><div class="lbl">Vitesse du fond<small>Tout à gauche = fond fixe (économise la batterie).</small><input id="bg-speed" type="range" min="0" max="100" value="${background.speed}"></div></div>
     <div class="set-row"><div class="lbl">Transparence du verre<input id="glass" type="range" min="0" max="100" value="${glass}"></div></div>
   </div>
 

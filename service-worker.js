@@ -1,5 +1,5 @@
 // Augmenter à chaque publication (avec APP_VERSION dans js/version.js), sinon les téléphones gardent l'ancienne version.
-const CACHE_VERSION = "cine-v3";
+const CACHE_VERSION = "cine-v4";
 const CORE = [
   "./", "index.html", "css/app.css", "manifest.json",
   "js/app.js", "js/version.js", "js/background.js", "js/shaders.js",

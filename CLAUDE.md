@@ -39,6 +39,8 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 - `js/shaders.js` : shaders « Mesh drift » / « Silk » repris de Sport. Fonds (`js/background.js`, Réglages) : Uni,
   Mesh drift, Silk, **Bordeaux** (défaut, v2 : même shader Silk, #0E0109/#580939/#9A005D en OKLab, réglages exacts du
   21st.dev Shader Builder fournis par l'utilisateur, effet « push » sous le doigt/la souris via u_space.zw/u_cursor.x).
+  **v4 : fond FIXE par défaut (vitesse 0, batterie)** : une seule image dessinée, aucune boucle, pas d'effet au doigt ;
+  passage unique forcé à 0 (localStorage `bg-fixed-v4`). Le curseur « Vitesse du fond » permet de le réanimer.
 - Panneaux (fiche film/cinéma, filtres) : se ferment en glissant vers le bas (depuis la poignée, ou partout quand le
   contenu est en haut), animation 0,25 s ; la page derrière n'est redessinée que si le jour/les filtres ont changé
   (`sheet.dirty`) ; fond animé en pause tant qu'un panneau est ouvert (flou du panneau sinon recalculé à chaque image).
