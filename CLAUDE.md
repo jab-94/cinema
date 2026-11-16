@@ -47,6 +47,9 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 - **Fluidité (v5)** : PAS de backdrop-filter sur les cartes des listes (544 flous faisaient ramer l'iPhone) : flou
   seulement sur l'en-tête, la barre d'onglets et les panneaux. Un onglet n'est reconstruit que si sa signature
   (`viewSignature` : jour, recherche, filtres, position…) a changé ; `content-visibility:auto` sur les cartes.
+- **v6** : `js/viewport.js` (script séparé, CSP) = correctif Sport de la hauteur d'écran en app installée (`--vvh`,
+  `screen.height` si `navigator.standalone`) : plus de bande noire en bas quand la page est courte. Jour à l'ouverture
+  (`pickDefaultDay`) : demain s'il ne reste plus de séance aujourd'hui ; écran vide avec bouton « Voir demain › ».
 - Séances de nuit (< 5 h) rangées après 23 h (`tkey`), y compris pour « Après 18 h » et les séances passées.
 - Tests Playwright : le Chromium du conteneur rend le WebGL en logiciel (~1 s/image) → passer `bg-style` à `plain`.
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).

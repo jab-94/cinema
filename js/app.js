@@ -145,7 +145,23 @@ function emptyState(text = "Aucune séance ne correspond.") {
   if (st.f.near) tips.push(`le rayon « Près de moi » est de ${st.radius} km`);
   if (st.f.cinepass) tips.push("seuls les cinémas CinéPass sont affichés");
   if (st.q) tips.push(`la recherche « ${esc(st.q)} » est active`);
-  return `<div class="empty"><b>${text}</b>${tips.length ? "Remarque : " + tips.join(", ") + "." : "Essaie un autre jour ou retire un filtre."}</div>`;
+  const next = nextDay(st.day);
+  const late = st.day === today() && next;
+  const btn = next ? `<p><button class="btn" data-day="${next}" type="button">Voir ${esc(dayLabel(next).toLowerCase())} ›</button></p>` : "";
+  const msg = late && !tips.length ? "Toutes les séances de la journée sont passées." : tips.length ? "Remarque : " + tips.join(", ") + "." : "Essaie un autre jour ou retire un filtre.";
+  return `<div class="empty"><b>${late && !tips.length ? "C'est fini pour aujourd'hui" : text}</b>${msg}${btn}</div>`;
+}
+
+function nextDay(d) {
+  const days = (data.meta?.days || []).filter((x) => x >= today());
+  return days[days.indexOf(d) + 1] || null;
+}
+// Jour affiché à l'ouverture : aujourd'hui, sauf s'il n'y reste plus aucune séance à venir
+// (ex. ouverture à 23 h 30) → demain directement.
+async function pickDefaultDay() {
+  const days = (data.meta?.days || []).filter((d) => d >= today());
+  st.day = days[0] || data.meta?.days?.[0];
+  if (days[1] && st.hidePast && !(await rowsFor(days[0], { ignoreQuery: true })).length) st.day = days[1];
 }
 
 views.films = async (el, token) => {
@@ -539,8 +555,12 @@ async function boot() {
     $("#tab-films").innerHTML = `<div class="empty"><b>Données indisponibles</b>Vérifie ta connexion puis rouvre l'app.</div>`;
     return;
   }
-  const days = (data.meta.days || []).filter((d) => d >= today());
-  st.day = days[0] || data.meta.days?.[0];
+  await pickDefaultDay();
+  // App rouverte le lendemain (restée en mémoire) : on repart du bon jour.
+  document.addEventListener("visibilitychange", async () => {
+    if (document.hidden || !data.meta || st.day >= today()) return;
+    await pickDefaultDay(); render();
+  });
   if (!st.pos) st.f.near = false;
   render();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
