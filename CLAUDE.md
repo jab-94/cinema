@@ -18,6 +18,8 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
     Ces trois derniers NE SONT PAS dans le dépôt (il grossirait chaque jour) : cache GitHub Actions + publication directe.
 - `.github/workflows/update.yml` : robot (3 h 17 et 15 h 47 UTC + à chaque push) → relit, publie sur Pages
   (source Pages = « GitHub Actions »). Un push de code republie avec les dernières séances en cache.
+- AlloCiné freine fort les serveurs GitHub (HTTP 429) : robot à 1 lecture à la fois, ≥ 1,2 s d'intervalle, doublé à
+  chaque 429 (Retry-After respecté) ; passage complet ~1 h ; arrêt rapide si 5 échecs sans aucune réussite.
 - Essai local : `node scraper/update.mjs --days 1 --limit 10` puis `python3 -m http.server`.
   Dans une session Claude Code cloud : `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`.
 
@@ -34,7 +36,12 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 - Nouvelle icône → nouveau nom de fichier (`-v2.png`) : iOS garde l'ancienne en cache.
 - CSP dans index.html : images autorisées seulement depuis `*.acsta.net` (affiches AlloCiné).
 - `vendor/liquidglass.*` : copiés de l'app Sport (construits dans le dépôt Budget, `tools/web-vendor/build-liquidglass.mjs`).
-- `js/shaders.js` : shaders « Mesh drift » / « Silk » repris de Sport.
+- `js/shaders.js` : shaders « Mesh drift » / « Silk » repris de Sport. Fonds (`js/background.js`, Réglages) : Uni,
+  Mesh drift, Silk, **Bordeaux** (défaut, v2 : même shader Silk, #0E0109/#580939/#9A005D en OKLab, réglages exacts du
+  21st.dev Shader Builder fournis par l'utilisateur, effet « push » sous le doigt/la souris via u_space.zw/u_cursor.x).
+- Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
+- `.github/workflows/apercu.yml` (lancement à la main) : publie le code de `main` avec la copie de séances de la
+  branche `apercu-data` (utile quand le robot n'a pas encore de séances en cache).
 
 ## Confidentialité
 - La position de l'utilisateur (géolocalisation ou ville choisie) reste en localStorage, jamais envoyée.

@@ -14,7 +14,7 @@ const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } cat
 const DEPTS = { 75: "Paris", 77: "Seine-et-Marne", 78: "Yvelines", 91: "Essonne", 92: "Hauts-de-Seine", 93: "Seine-Saint-Denis", 94: "Val-de-Marne", 95: "Val-d'Oise" };
 const FORMATS = ["IMAX", "Dolby Cinema", "4DX", "ScreenX", "3D", "Dolby Atmos", "70 mm", "35 mm"];
 const HOURS = [0, 12, 14, 18, 20];
-const RADII = [2, 5, 10, 20];
+const RADII = [2, 5, 10, 20, 30, 50];
 
 // ------------------------------------------------------------ État
 const data = { meta: null, cinemas: new Map(), movies: {}, days: {} };
@@ -230,7 +230,7 @@ views.settings = async (el) => {
     <div class="set-row"><div class="lbl">Ou une ville</div>
       <select id="city-pick"><option value="">—</option>${cities.map((c) => `<option ${st.pos?.label === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>
     <div class="set-row"><div class="lbl">Rayon</div>
-      <div class="seg" id="radius">${RADII.map((r) => `<button class="${r === st.radius ? "on" : ""}" data-r="${r}" type="button">${r} km</button>`).join("")}</div></div>
+      <div class="seg full" id="radius">${RADII.map((r) => `<button class="${r === st.radius ? "on" : ""}" data-r="${r}" type="button">${r} km</button>`).join("")}</div></div>
   </div>
 
   <div class="section-title">Séances</div>

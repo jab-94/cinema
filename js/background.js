@@ -1,4 +1,5 @@
-// Fond d'écran animé (même code que l'app Sport) : shaders WebGL1 « Mesh drift » et « Silk ».
+// Fond d'écran animé (même code que l'app Sport) : shaders WebGL1 « Mesh drift » et « Silk » (+ « Bordeaux »,
+// le même shader Silk avec d'autres réglages et l'effet « push » sous le doigt / la souris).
 // Réglages gardés sur ce téléphone : localStorage « bg-style » et « bg-speed ».
 import { MESH_DRIFT, SILK } from "./shaders.js";
 
@@ -12,8 +13,15 @@ const STYLES = {
     colors: [0.008,0.004,0.039, 0.016,0.020,0.180, 0.239,0.173,0.553, 0.569,0.420,0.749],
     shape: [1.26, 0.28, 0.50, 0.00], surface: [2.40, 1.11, 0.00, 1.00], finish: [0.00, 0.00, 0.000, 0.05],
     transform: [1581.0, 0.00, 0.00, 0.0], space: [0.00, 0.00, 0.0, 0.0], cursor: [0.0, 2.0, 0.65, 0.46] },
+  // « Silk » bordeaux (21st.dev Shader Builder, même shader) : #0E0109 → #580939 → #9A005D mélangés en OKLab ;
+  // vitesse 7, zoom 44, intensité 43, warp 3, contraste 40, luminosité 41, saturation 52, teinte 0°,
+  // vignette 28, grain 10 ; curseur « push » force 30, rayon 50 (suit le doigt / la souris).
+  bordeaux: { label: "Bordeaux", frag: SILK, timeScale: 0.23, colorCount: 3, pointer: true,
+    colors: [0.055,0.004,0.035, 0.345,0.035,0.224, 0.604,0.000,0.365],
+    shape: [1.38, 0.43, 0.80, 0.02], surface: [1.57, 0.96, -0.09, 1.04], finish: [0.00, 0.28, 0.021, 0.03],
+    transform: [5293.0, 5.25, 0.01, 1.0], space: [0.08, -0.07, 0.0, 0.0], cursor: [0.0, 0.0, 0.30, 0.46] },
 };
-const DEFAULT_STYLE = "silk", DEFAULT_SPEED = 50;
+const DEFAULT_STYLE = "bordeaux", DEFAULT_SPEED = 50;
 
 const pref = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, String(v)); } catch {} };
@@ -52,7 +60,18 @@ export function startBackground() {
     }
     return (programs[key] = prog);
   };
-  let cur = null, uScene = null, simT = 0, last = 0, raf = 0;
+  let cur = null, uScene = null, uSpace = null, uCursor = null, simT = 0, last = 0, raf = 0;
+  // Pointeur normalisé -1..1 (y vers le haut, comme gl_FragCoord) ; présence lissée 0 → 1.
+  const ptr = { x: 0, y: 0, tx: 0, ty: 0, on: 0, presence: 0 };
+  const onMove = (e) => {
+    ptr.tx = (e.clientX / innerWidth) * 2 - 1; ptr.ty = 1 - (e.clientY / innerHeight) * 2; ptr.on = 1;
+    if (!raf) draw();
+  };
+  addEventListener("pointermove", onMove, { passive: true });
+  addEventListener("pointerdown", onMove, { passive: true });
+  addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") ptr.on = 0; }, { passive: true });
+  document.addEventListener("pointerleave", () => { ptr.on = 0; });
+  addEventListener("blur", () => { ptr.on = 0; });
   const rate = () => (cur?.frag ? cur.timeScale * (speed / DEFAULT_SPEED) : 0);
   function apply() {
     cur = STYLES[styleKey];
@@ -66,7 +85,7 @@ export function startBackground() {
     const colors = new Float32Array(24); colors.set(cur.colors);
     gl.uniform3fv(U("u_colors[0]") || U("u_colors"), colors);
     for (const k of ["shape", "surface", "finish", "transform", "space", "cursor"]) gl.uniform4fv(U("u_" + k), cur[k]);
-    uScene = U("u_scene");
+    uScene = U("u_scene"); uSpace = U("u_space"); uCursor = U("u_cursor");
     draw(); start();
   }
   function draw() {
@@ -75,6 +94,13 @@ export function startBackground() {
     const w = Math.max(1, Math.round(canvas.clientWidth * dpr)), h = Math.max(1, Math.round(canvas.clientHeight * dpr));
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
     gl.uniform4f(uScene, canvas.width, canvas.height, simT, cur.colorCount);
+    if (cur.pointer) {
+      // suivi doux du doigt, présence qui apparaît / s'efface en ~0,3 s
+      ptr.x += (ptr.tx - ptr.x) * 0.12; ptr.y += (ptr.ty - ptr.y) * 0.12;
+      ptr.presence += ((still ? 0 : ptr.on) - ptr.presence) * 0.08;
+      gl.uniform4f(uSpace, cur.space[0], cur.space[1], ptr.x, ptr.y);
+      gl.uniform4f(uCursor, ptr.presence, cur.cursor[1], cur.cursor[2], cur.cursor[3]);
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     canvas.classList.add("on");
   }
