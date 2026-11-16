@@ -47,6 +47,7 @@ jobs:
             data/days
             data/movies.json
             data/meta.json
+            data/imdb-ids.json
           key: seances-${{ github.run_id }}
           restore-keys: seances-
 
@@ -63,6 +64,7 @@ jobs:
             data/days
             data/movies.json
             data/meta.json
+            data/imdb-ids.json
           key: seances-${{ github.run_id }}
 
       - name: Enregistrer la liste des cinémas si elle a changé

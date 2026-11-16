@@ -8,6 +8,7 @@
 // Aucune dépendance : Node 20+ (fetch intégré).
 
 import { readFile, writeFile, mkdir, readdir, unlink } from "node:fs/promises";
+import { gunzipSync } from "node:zlib";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,6 +27,7 @@ const opt = (name, def) => { const i = args.indexOf(name); return i < 0 ? def : 
 const DAYS = Number(opt("--days", 7));
 const LIMIT = Number(opt("--limit", 0));
 const FORCE_INVENTORY = args.includes("--inventory");
+const RATINGS_ONLY = args.includes("--ratings-only"); // ajoute seulement les notes IMDb aux films déjà lus
 // Rythme prudent : AlloCiné freine vite les serveurs de GitHub (HTTP 429 « trop de demandes »).
 // Une lecture à la fois, au moins MIN_INTERVAL_MS entre deux ; l'intervalle double à chaque 429
 // (jusqu'à 30 s) puis redescend doucement quand ça repasse.
@@ -254,10 +256,65 @@ async function fetchShowtimes(cinemaId, date) {
   return out;
 }
 
+// ---------------------------------------------------------------- Notes IMDb
+// Lien film AlloCiné → film IMDb : Wikidata (propriété P1265 « identifiant AlloCiné film » → P345 « IMDb »),
+// gardé dans data/imdb-ids.json pour ne redemander que les nouveaux films. Notes : fichier public quotidien
+// d'IMDb (title.ratings.tsv.gz, ~8 Mo). Gratuit, sans clé. Jamais bloquant : en cas d'échec, pas de note.
+async function addImdbRatings(movies) {
+  const t0 = Date.now();
+  const mapFile = path.join(DATA, "imdb-ids.json");
+  const map = await readJson(mapFile, {});
+  const todo = Object.keys(movies).filter((id) => !(id in map));
+  if (todo.length) {
+    const query = `SELECT ?a ?imdb WHERE { VALUES ?a { ${todo.map((x) => `"${x}"`).join(" ")} } ?f wdt:P1265 ?a . ?f wdt:P345 ?imdb . }`;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch("https://query.wikidata.org/sparql", {
+          method: "POST",
+          headers: { "User-Agent": "cinema-idf-bot/1.0", Accept: "application/sparql-results+json", "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ query }),
+        });
+        if (res.status === 429) { await sleep(65000); continue; } // Wikidata limite parfois à 1 requête / minute
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const d = await res.json();
+        for (const b of d.results.bindings) map[b.a.value] = b.imdb.value;
+        // films sans lien : redemandés au prochain passage (Wikidata se complète au fil des jours)
+        break;
+      } catch (e) { console.warn("  Wikidata :", e.message); if (attempt < 3) await sleep(5000); }
+    }
+    await writeJson(mapFile, map);
+  }
+  let ratings;
+  try {
+    const res = await fetch("https://datasets.imdbws.com/title.ratings.tsv.gz", { headers: { "User-Agent": "cinema-idf-bot/1.0" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const wanted = new Set(Object.values(map));
+    ratings = new Map();
+    for (const line of gunzipSync(Buffer.from(await res.arrayBuffer())).toString("utf8").split("\n")) {
+      const tab = line.indexOf("\t");
+      if (tab < 0 || !wanted.has(line.slice(0, tab))) continue;
+      const [tc, avg, votes] = line.split("\t");
+      ratings.set(tc, [Number(avg), Number(votes)]);
+    }
+  } catch (e) { console.warn("  notes IMDb indisponibles :", e.message); return; }
+  let n = 0;
+  for (const [id, m] of Object.entries(movies)) {
+    const r = ratings.get(map[id]);
+    if (r && r[1] >= 50) { m.im = r; m.imdb = map[id]; n++; }
+  }
+  console.log(`  notes IMDb : ${n}/${Object.keys(movies).length} films (${Math.round((Date.now() - t0) / 1000)} s)`);
+}
+
 // ---------------------------------------------------------------- Principal
 
 async function main() {
   const t0 = Date.now();
+  if (RATINGS_ONLY) {
+    const movies = await readJson(path.join(DATA, "movies.json"), {});
+    await addImdbRatings(movies);
+    await writeJson(path.join(DATA, "movies.json"), movies);
+    return;
+  }
   console.log("Cinémas…");
   let cinemas = await readJson(path.join(DATA, "cinemas.json"), null);
   const meta = await readJson(path.join(DATA, "meta.json"), {});
@@ -330,7 +387,10 @@ async function main() {
   for (const c of cinemas) c.on = active.has(c.id) ? 1 : 0;
   cinemas.sort((a, b) => a.name.localeCompare(b.name, "fr"));
   await writeJson(path.join(DATA, "cinemas.json"), cinemas);
-  await writeJson(path.join(DATA, "movies.json"), Object.fromEntries(movies));
+  const moviesObj = Object.fromEntries(movies);
+  console.log("Notes IMDb…");
+  await addImdbRatings(moviesObj).catch((e) => console.warn("  notes IMDb :", e.message));
+  await writeJson(path.join(DATA, "movies.json"), moviesObj);
   const total = Object.values(perDay).reduce((n, r) => n + r.length, 0);
   Object.assign(meta, { updatedAt: new Date().toISOString(), days, showtimes: total, movies: movies.size, cinemasActive: active.size, errors });
   await writeJson(path.join(DATA, "meta.json"), meta);

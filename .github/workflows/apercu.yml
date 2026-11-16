@@ -29,6 +29,7 @@ jobs:
             data/days
             data/movies.json
             data/meta.json
+            data/imdb-ids.json
           key: seances-${{ github.run_id }}
           restore-keys: seances-
       - name: Copie de secours (seulement si le robot n'a encore rien lu)

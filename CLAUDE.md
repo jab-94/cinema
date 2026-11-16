@@ -54,6 +54,11 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 - Tests Playwright : le Chromium du conteneur rend le WebGL en logiciel (~1 s/image) → passer `bg-style` à `plain`.
 - Bouton « Itinéraire Waze » (fiche cinéma, v8) : lien universel `waze.com/ul?ll=…&navigate=yes` (demande de l'utilisateur : Waze plutôt que Plans).
 - Liens de réservation Pathé (v9) : AlloCiné les donne en anglais (`s.pathe.fr/en/…`) → réécrits en `/fr/` dans l'app (`frLink`) et dans le robot. Non vérifiable depuis le conteneur (s.pathe.fr renvoie 403 aux robots) : à confirmer par l'utilisateur.
+- **Notes des films (v10–v11)** : AlloCiné spectateurs (`us`, ≥ 20 votes) et presse (`pr`, ≥ 3 critiques) sur 5, depuis
+  `movie.stats` ; IMDb sur 10 (`im` = [note, votes], ≥ 50 votes) : lien AlloCiné → IMDb via Wikidata (P1265 → P345,
+  une seule requête POST, cache `data/imdb-ids.json` dans le cache Actions ; Wikidata limite parfois à 1 req/min →
+  attente 65 s) + fichier public `datasets.imdbws.com/title.ratings.tsv.gz`. Jamais bloquant. ~36 des 40 films les plus
+  programmés ont une note IMDb (manquent surtout les sorties très récentes). `--ratings-only` : ajoute IMDb à movies.json.
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
   cache du robot ; la vieille copie de la branche `apercu-data` (16 nov.) ne sert que si le cache est vide.
