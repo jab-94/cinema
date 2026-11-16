@@ -52,6 +52,7 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
   (`pickDefaultDay`) : demain s'il ne reste plus de séance aujourd'hui ; écran vide avec bouton « Voir demain › ».
 - Séances de nuit (< 5 h) rangées après 23 h (`tkey`), y compris pour « Après 18 h » et les séances passées.
 - Tests Playwright : le Chromium du conteneur rend le WebGL en logiciel (~1 s/image) → passer `bg-style` à `plain`.
+- Bouton « Itinéraire Waze » (fiche cinéma, v8) : lien universel `waze.com/ul?ll=…&navigate=yes` (demande de l'utilisateur : Waze plutôt que Plans).
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
   cache du robot ; la vieille copie de la branche `apercu-data` (16 nov.) ne sert que si le cache est vide.

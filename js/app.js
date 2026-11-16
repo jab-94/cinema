@@ -397,11 +397,14 @@ async function showCinema(cid) {
   const byMovie = new Map();
   for (const r of rows) { if (!byMovie.has(r.mid)) byMovie.set(r.mid, []); byMovie.get(r.mid).push(r); }
   const list = [...byMovie.entries()].sort((a, b) => tkey(a[1][0].time).localeCompare(tkey(b[1][0].time)));
-  const maps = c.lat != null ? `https://maps.apple.com/?q=${encodeURIComponent(c.name)}&ll=${c.lat},${c.lng}` : `https://maps.apple.com/?q=${encodeURIComponent(c.name + " " + c.address + " " + c.zip)}`;
+  // Itinéraire dans Waze (lien universel : ouvre l'app Waze si elle est installée, sinon le site Waze).
+  const maps = c.lat != null
+    ? `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`
+    : `https://waze.com/ul?q=${encodeURIComponent([c.address, c.zip, c.city].filter(Boolean).join(" "))}&navigate=yes`;
   openSheet(`
     <h3>${esc(c.name)}${cpBadge(c)}</h3>
     <p class="small cine-addr">${esc([c.address, `${c.zip} ${c.city}`].filter(Boolean).join(", "))}${distOf(c) != null ? " · " + fmtKm(distOf(c)) : ""}</p>
-    <p class="btn-row"><a class="btn ghost" href="${esc(maps)}" target="_blank" rel="noopener noreferrer">Itinéraire</a>
+    <p class="btn-row"><a class="btn ghost" href="${esc(maps)}" target="_blank" rel="noopener noreferrer">Itinéraire Waze</a>
       <a class="btn ghost" href="https://www.allocine.fr/seance/salle_gen_csalle=${esc(c.id)}.html" target="_blank" rel="noopener noreferrer">Page AlloCiné</a></p>
     ${dayChipsInSheet()}
     ${activeFiltersLine()}
