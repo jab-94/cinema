@@ -1,0 +1,39 @@
+# Aperçu : publie l'app avec une copie des séances enregistrée sur la branche « apercu-data »
+# (utile quand le robot n'a pas encore fini). Lancement à la main seulement.
+name: Aperçu
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: apercu
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copie des séances
+        run: |
+          git fetch --depth 1 origin apercu-data
+          git checkout FETCH_HEAD -- data
+      - name: Préparer le site
+        run: |
+          mkdir -p _site
+          cp -r index.html manifest.json service-worker.js css js vendor icons data _site/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
