@@ -113,7 +113,7 @@ a.time:active{transform:scale(.95)}
 
 /* Fiche film */
 .film-hero{display:flex;gap:14px;margin-bottom:14px}
-.film-hero .poster{width:120px;flex:none}
+.film-hero .poster{width:92px;flex:none}
 .film-hero h2{margin:2px 0 6px;font-size:22px;line-height:1.15}
 .film-hero .fs{font-size:13.5px;color:var(--ink-soft);margin:2px 0}
 .syn{font-size:14.5px;color:#d6d6de;margin:0 0 6px}
@@ -203,9 +203,17 @@ nav#tabs .lg-host{width:100%;--lg-tab-accent:var(--accent)}
 .card-head .leaving{display:block}
 .leaving-note{margin:0 0 12px;padding:9px 12px;border-radius:12px;background:rgba(255,159,10,.14);color:#ffc266;font-size:14px;font-weight:600}
 
-/* Réalisateur / acteurs (cliquables) et résumé masqué */
-.people{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
-.people-lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-right:4px;min-width:84px}
-.person{padding:6px 11px;border-radius:999px;background:rgba(118,118,128,.24);font-size:14.5px;font-weight:600}
-.syn-toggle{display:block;margin:2px 0 12px;padding:8px 12px;border-radius:10px;background:rgba(118,118,128,.16);color:var(--ink-soft);font-size:14px;font-weight:600}
-.syn{margin:-4px 0 12px}
+/* Réalisateur / acteurs / notes : UNE ligne chacun, on glisse vers la droite pour voir la suite (v14) */
+.people,.rates{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;
+  margin:0 -16px 8px;padding:0 16px;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
+.people::-webkit-scrollbar,.rates::-webkit-scrollbar{display:none}
+.people-lbl{flex:none;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);width:62px}
+.person{flex:none;padding:4px 10px;border-radius:999px;background:rgba(118,118,128,.24);font-size:13.5px;font-weight:600;white-space:nowrap}
+.rates{margin-bottom:10px}
+.rate{flex:none;display:inline-flex;align-items:baseline;gap:4px;padding:4px 10px;border-radius:999px;background:rgba(118,118,128,.18);font-weight:700;font-size:13.5px;white-space:nowrap}
+.rate b{font-weight:600;font-size:11.5px;color:var(--ink-soft)}
+.rate b.r-imdb{color:#000;font-size:9.5px;font-weight:800;padding:1px 4px}
+.rate small{font-weight:500;font-size:11px;color:var(--ink-soft)}
+.sheet-days{touch-action:pan-x pan-y}
+.syn-toggle{display:block;margin:0 0 10px;padding:2px 0;background:none;color:var(--ink-soft);font-size:14px;font-weight:500}
+.syn{margin:-2px 0 12px}

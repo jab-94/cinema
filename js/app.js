@@ -63,9 +63,9 @@ function ratingsShort(m) {
 }
 function ratingsFull(m) {
   const out = [];
-  if (m?.im) out.push(`<span class="rate"><b class="r-imdb">IMDb</b> ${num1(m.im[0])}<small>/10 · ${kVotes(m.im[1])} votes</small></span>`);
-  if (m?.us) out.push(`<span class="rate"><b>Spectateurs</b> ★ ${num1(m.us[0])}<small>/5 · ${kVotes(m.us[1])} notes</small></span>`);
-  if (m?.pr) out.push(`<span class="rate"><b>Presse</b> ★ ${num1(m.pr[0])}<small>/5 · ${m.pr[1]} critiques</small></span>`);
+  if (m?.im) out.push(`<span class="rate"><b class="r-imdb">IMDb</b> ${num1(m.im[0])}<small>/10</small></span>`);
+  if (m?.us) out.push(`<span class="rate"><b>Spectateurs</b> ★ ${num1(m.us[0])}<small>/5</small></span>`);
+  if (m?.pr) out.push(`<span class="rate"><b>Presse</b> ★ ${num1(m.pr[0])}<small>/5</small></span>`);
   return out.length ? `<div class="rates">${out.join("")}</div>` : "";
 }
 function runtime(m) { if (!m?.d) return ""; const h = Math.floor(m.d / 60), mn = m.d % 60; return h ? `${h} h ${String(mn).padStart(2, "0")}` : `${mn} min`; }
@@ -449,14 +449,14 @@ async function showMovie(mid) {
   const rows = await rowsFor(st.day, { ignoreQuery: true, movieId: mid });
   const groups = groupByCinema(rows);
   // Résumé masqué par défaut (il en dit souvent trop) ; réalisateur et acteurs en avant, cliquables.
-  const syn = m?.syn ? `<button class="syn-toggle" data-syn type="button">Afficher le résumé</button><p class="syn" hidden>${esc(m.syn)}</p>` : "";
+  const syn = m?.syn ? `<button class="syn-toggle" data-syn type="button">Afficher le résumé ›</button><p class="syn" hidden>${esc(m.syn)}</p>` : "";
   openSheet(`
     <div class="film-hero"><div class="poster">${poster(m)}</div>
       <div><h2>${esc(m?.t)}</h2>
         <div class="fs">${esc([runtime(m), (m?.g || []).join(", ")].filter(Boolean).join(" · "))}</div>
         ${m?.r ? `<div class="fs">Sortie : ${esc(new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(m.r + "T12:00:00")))}</div>` : ""}
       </div></div>
-    ${peopleBlock("Réalisation", m?.dir)}
+    ${peopleBlock("Réal.", m?.dir)}
     ${peopleBlock("Avec", m?.cast)}
     ${ratingsFull(m)}
     ${syn}
@@ -556,7 +556,7 @@ document.addEventListener("click", async (e) => {
   }
   if (d.movie) { e.preventDefault(); showMovie(d.movie); return; }
   if (d.person) { showPerson(d.person, d.pid || null); return; }
-  if (d.syn !== undefined) { const p = t.nextElementSibling; p.hidden = !p.hidden; t.textContent = p.hidden ? "Afficher le résumé" : "Masquer le résumé"; return; }
+  if (d.syn !== undefined) { const p = t.nextElementSibling; p.hidden = !p.hidden; t.textContent = p.hidden ? "Afficher le résumé ›" : "Masquer le résumé ‹"; return; }
   if (d.cinema) { showCinema(d.cinema); return; }
   if (d.more !== undefined) { st.nowLimit += 100; render(); return; }
   if (t.id === "more-filters") { showFilters(); return; }

@@ -72,6 +72,9 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
   (anciennes données : simple nom, gérées par `person()`). Fiche personne (`showPerson`) : ses films à l'affiche cette
   semaine (nos données) + « Filmographie complète » → `allocine.fr/personne/fichepersonne-<id>/filmographie/`
   (sans id : recherche AlloCiné par nom).
+  **v14 (compacité, « ça reste une appli de séances »)** : réal., acteurs et notes = UNE ligne chacun, défilement
+  horizontal (`touch-action:pan-x pan-y` sur ces rangées, sinon le panneau capte le geste) ; notes sans nombre de votes ;
+  « Afficher le résumé › » en simple texte gris ; affiche de la fiche réduite à 92 px.
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
   cache du robot ; la vieille copie de la branche `apercu-data` (16 nov.) ne sert que si le cache est vide.
