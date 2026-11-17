@@ -83,10 +83,14 @@ const weekday = (d) => new Date(d + "T12:00:00Z").getUTCDay();
 function nextWednesday() { const t = today(); for (let k = 1; k <= 7; k++) if (weekday(addDays(t, k)) === 3) return addDays(t, k); }
 let lcCache = null;
 function lastChanceInfo() {
-  const key = [data.meta?.updatedAt, today(), st.pos?.lat, st.pos?.lng, st.radius].join("|");
+  const key = [data.meta?.updatedAt, today(), st.pos?.lat, st.pos?.lng, st.radius, st.f.cinepass, st.f.deps.join()].join("|");
   if (lcCache?.key === key) return lcCache;
   const wed = nextWednesday(), t = today(), H = data.progress.h || {}, P = data.progress.p || {};
-  const zone = [...data.cinemas.values()].filter((c) => P[c.id] && (!st.pos || (distOf(c) ?? 1e9) <= st.radius)).map((c) => c.id);
+  // Zone = cinémas qui correspondent à tes filtres « où » : rayon (si position), CinéPass, départements (v21).
+  const zone = [...data.cinemas.values()].filter((c) => P[c.id]
+    && (!st.pos || (distOf(c) ?? 1e9) <= st.radius)
+    && (!st.f.cinepass || c.cp)
+    && (!st.f.deps.length || st.f.deps.includes(c.zip?.slice(0, 2)))).map((c) => c.id);
   const film = {};
   for (const cid of zone) {
     for (const [mid, [last, n]] of Object.entries(P[cid])) {
@@ -98,7 +102,15 @@ function lastChanceInfo() {
     }
   }
   const films = new Map();
-  for (const [mid, f] of Object.entries(film)) if (!f.continues && !f.unknown && f.n >= 4 && f.last) films.set(mid, f.last);
+  // Seulement les films de l'ACTUALITÉ (produits cette année ou l'an dernier) : les ressorties, classiques,
+  // rétrospectives et ciné-clubs ne « quittent pas l'affiche » au sens où on l'entend (v21). Sans année connue :
+  // sortie il y a moins de 6 mois. Un film récent en fin de course (1 séance par jour) compte.
+  const year = Number(t.slice(0, 4)), sixMonthsAgo = addDays(t, -183);
+  for (const [mid, f] of Object.entries(film)) {
+    const m = data.movies[mid] || {};
+    const current = m.y ? m.y >= year - 1 : (m.r || "") >= sixMonthsAgo;
+    if (current && !f.continues && !f.unknown && f.last) films.set(mid, f.last);
+  }
   const published = zone.filter((id) => (H[id] || "") >= wed).length;
   return (lcCache = { key, wed, films, zone: zone.length, published });
 }
@@ -108,7 +120,10 @@ function leavingHere(cid, mid) {
   const e = data.progress.p?.[cid]?.[mid], wed = lastChanceInfo().wed;
   return e && (data.progress.h?.[cid] || "") >= wed && e[0] < wed && e[0] >= today() && e[1] >= 2 ? e[0] : null;
 }
-function zoneLabel() { return st.pos ? `à moins de ${st.radius} km` : "en Île-de-France"; }
+function zoneLabel() {
+  const where = st.pos ? `à moins de ${st.radius} km` : st.f.deps.length ? `dans ${st.f.deps.length > 1 ? "tes départements" : DEPTS[st.f.deps[0]]}` : "en Île-de-France";
+  return st.f.cinepass ? `dans les cinémas CinéPass ${where}` : where;
+}
 function lastChanceBanner() {
   if (!st.f.leaving) return "";
   const i = lastChanceInfo();

@@ -69,6 +69,9 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
   chance » (filtre + restreint aux cinémas de la zone), badge rouge sur l'affiche (« Dernier jour » le jour même),
   bandeau court (« Plus à l'affiche à moins de 10 km à partir de demain · 129/131 cinémas ont publié » ; du mercredi
   au dimanche : « Programmes … pas encore publiés »), « Dernière séance ici … » par cinéma (`leavingHere`).
+  **v21** : la zone suit AUSSI les filtres CinéPass et départements (« dernière chance dans les cinémas que je regarde » :
+  ex. Le Roi du Game quitte les 2 CinéPass mais reste ailleurs) ; seulement les films de l'ACTUALITÉ (année de production
+  ≥ année − 1, sinon sortie < 6 mois) : ressorties (Dune), classiques, ciné-clubs exclus ; plus de seuil de 4 séances.
 - **Fiche film (v13)** : résumé MASQUÉ par défaut (« Afficher le résumé », l'utilisateur trouve qu'il spoile) ;
   réalisation et 5 acteurs principaux en pastilles cliquables (`peopleBlock`). Robot : `dir`/`cast` = [nom, id AlloCiné]
   (anciennes données : simple nom, gérées par `person()`). Fiche personne (`showPerson`) : ses films à l'affiche cette
