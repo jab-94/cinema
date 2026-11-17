@@ -95,3 +95,5 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 ## Utilisateur
 - Pas développeur : expliquer simplement, pas à pas. Avis esthétiques précis : itérer vite.
 - Vérifier visuellement (captures) avant de considérer fini.
+- NE PAS attendre/confirmer chaque publication GitHub Pages (« je confirme dans 1 min ») : l'utilisateur trouve ça
+  inutile et coûteux. Pousser, dire que c'est envoyé, s'arrêter ; ne vérifier que si une étape risque d'échouer.
