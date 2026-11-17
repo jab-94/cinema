@@ -67,6 +67,11 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
   `movies[id].ld` si le film part de TOUS ses cinémas (≥ 8 séances). App : badge orange « Derniers jours / Dernier
   jour » sur l'affiche, encart dans la fiche, « Dernière séance ici … » par cinéma, filtre « Derniers jours seulement ».
   Règles réglées le 17 nov. (1er test : 346 films marqués à tort, surtout ciné-clubs → resserré).
+- **Fiche film (v13)** : résumé MASQUÉ par défaut (« Afficher le résumé », l'utilisateur trouve qu'il spoile) ;
+  réalisation et 5 acteurs principaux en pastilles cliquables (`peopleBlock`). Robot : `dir`/`cast` = [nom, id AlloCiné]
+  (anciennes données : simple nom, gérées par `person()`). Fiche personne (`showPerson`) : ses films à l'affiche cette
+  semaine (nos données) + « Filmographie complète » → `allocine.fr/personne/fichepersonne-<id>/filmographie/`
+  (sans id : recherche AlloCiné par nom).
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
   cache du robot ; la vieille copie de la branche `apercu-data` (16 nov.) ne sert que si le cache est vide.

@@ -402,19 +402,62 @@ function activeFiltersLine() {
   return parts.length ? `<p class="small">Filtres : ${esc(parts.join(", "))}</p>` : "";
 }
 
+// Personnes : [nom, id AlloCiné] (anciennes données : simple nom)
+const person = (x) => (Array.isArray(x) ? x : [x, null]);
+function peopleBlock(label, list) {
+  if (!list?.length) return "";
+  return `<div class="people"><span class="people-lbl">${label}</span>${list.map((x) => {
+    const [name, id] = person(x);
+    return `<button class="person" data-person="${esc(name)}" data-pid="${esc(id || "")}" type="button">${esc(name)}</button>`;
+  }).join("")}</div>`;
+}
+
+// Fiche d'une personne : ses films à l'affiche (dans nos données) + lien vers sa filmographie complète.
+async function showPerson(name, pid) {
+  const raw = await loadDay(st.day);
+  const today = new Map();
+  for (const [cid, mid] of raw) { if (!today.has(mid)) today.set(mid, new Set()); today.get(mid).add(cid); }
+  const same = (x) => { const [n, id] = person(x); return (pid && id) ? String(id) === String(pid) : norm(n) === norm(name); };
+  const films = [];
+  for (const [mid, m] of Object.entries(data.movies)) {
+    const roles = [];
+    if (m.dir?.some(same)) roles.push("Réalisation");
+    if (m.cast?.some(same)) roles.push("Interprétation");
+    if (roles.length) films.push({ mid, m, roles, n: today.get(mid)?.size || 0 });
+  }
+  films.sort((a, b) => b.n - a.n || (b.m.r || "").localeCompare(a.m.r || ""));
+  const link = pid ? `https://www.allocine.fr/personne/fichepersonne-${encodeURIComponent(pid)}/filmographie/`
+    : `https://www.allocine.fr/rechercher/?q=${encodeURIComponent(name)}`;
+  openSheet(`
+    <h3>${esc(name)}</h3>
+    <p class="btn-row"><a class="btn ghost" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Filmographie complète ›</a></p>
+    <div class="section-title">À l'affiche cette semaine</div>
+    <div class="glass card">${films.map((f) => `
+      <div class="film-row">
+        <button class="thumb" data-movie="${f.mid}" type="button">${poster(f.m)}</button>
+        <div class="info"><button class="ft" data-movie="${f.mid}" type="button">${esc(f.m.t)}</button>
+          <div class="fs">${esc([f.roles.join(", "), f.m.y || (f.m.r || "").slice(0, 4)].filter(Boolean).join(" · "))}</div>
+          ${ratingsShort(f.m)}
+          <div class="fs">${f.n ? `${nb(f.n, "cinéma")} ${esc(dayLabel(st.day).toLowerCase())}` : `Pas de séance ${esc(dayLabel(st.day).toLowerCase())}`}</div>
+        </div>
+      </div>`).join("") || `<p class="small">Aucun autre film à l'affiche.</p>`}</div>`, "person", name);
+  sheet.pid = pid;
+}
+
 async function showMovie(mid) {
   const m = data.movies[mid];
   const rows = await rowsFor(st.day, { ignoreQuery: true, movieId: mid });
   const groups = groupByCinema(rows);
-  const syn = m?.syn ? `<p class="syn clamp" data-expand>${esc(m.syn)}</p>` : "";
+  // Résumé masqué par défaut (il en dit souvent trop) ; réalisateur et acteurs en avant, cliquables.
+  const syn = m?.syn ? `<button class="syn-toggle" data-syn type="button">Afficher le résumé</button><p class="syn" hidden>${esc(m.syn)}</p>` : "";
   openSheet(`
     <div class="film-hero"><div class="poster">${poster(m)}</div>
       <div><h2>${esc(m?.t)}</h2>
         <div class="fs">${esc([runtime(m), (m?.g || []).join(", ")].filter(Boolean).join(" · "))}</div>
-        ${m?.dir?.length ? `<div class="fs">De ${esc(m.dir.join(", "))}</div>` : ""}
-        ${m?.cast?.length ? `<div class="fs">Avec ${esc(m.cast.join(", "))}</div>` : ""}
         ${m?.r ? `<div class="fs">Sortie : ${esc(new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(m.r + "T12:00:00")))}</div>` : ""}
       </div></div>
+    ${peopleBlock("Réalisation", m?.dir)}
+    ${peopleBlock("Avec", m?.cast)}
     ${ratingsFull(m)}
     ${syn}
     ${filmLeaving(m) ? `<p class="leaving-note">⏳ Quitte l'affiche : dernière séance prévue ${esc(whenText(filmLeaving(m)))}.</p>` : ""}
@@ -473,6 +516,7 @@ function showFilters() {
 async function refreshSheet() {
   if (sheet.kind === "movie") await showMovie(sheet.id);
   else if (sheet.kind === "cinema") await showCinema(sheet.id);
+  else if (sheet.kind === "person") await showPerson(sheet.id, sheet.pid);
   else if (sheet.kind === "filters") { const y = $(".sheet-panel").scrollTop; showFilters(); $(".sheet-panel").scrollTop = y; }
 }
 
@@ -511,6 +555,8 @@ document.addEventListener("click", async (e) => {
     return;
   }
   if (d.movie) { e.preventDefault(); showMovie(d.movie); return; }
+  if (d.person) { showPerson(d.person, d.pid || null); return; }
+  if (d.syn !== undefined) { const p = t.nextElementSibling; p.hidden = !p.hidden; t.textContent = p.hidden ? "Afficher le résumé" : "Masquer le résumé"; return; }
   if (d.cinema) { showCinema(d.cinema); return; }
   if (d.more !== undefined) { st.nowLimit += 100; render(); return; }
   if (t.id === "more-filters") { showFilters(); return; }

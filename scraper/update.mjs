@@ -218,7 +218,9 @@ function posterUrl(m) {
 
 function movieInfo(m) {
   const rel = m.releases?.find((r) => r.releaseDate?.date)?.releaseDate?.date || null;
-  const dir = (m.credits || []).filter((c) => /Direct/i.test(c.position?.name || "")).map((c) => personName(c.person)).filter(Boolean);
+  // Personnes : [nom, identifiant AlloCiné] (l'identifiant sert au lien « Filmographie complète »)
+  const who = (p) => (personName(p) ? [personName(p), p.internalId || null] : null);
+  const dir = (m.credits || []).filter((c) => /Direct/i.test(c.position?.name || "")).map((c) => who(c.person)).filter(Boolean);
   return {
     t: m.title,
     d: parseRuntime(m.runtime),
@@ -226,7 +228,7 @@ function movieInfo(m) {
     p: posterUrl(m),
     r: rel,
     dir: dir.slice(0, 2),
-    cast: (m.cast?.edges || m.cast?.nodes || []).map((e) => personName((e.node || e).actor || (e.node || e).person)).filter(Boolean).slice(0, 4),
+    cast: (m.cast?.edges || m.cast?.nodes || []).map((e) => who((e.node || e).actor || (e.node || e).person)).filter(Boolean).slice(0, 5),
     syn: m.synopsisFull ? decodeHtml(m.synopsisFull.replace(/<[^>]+>/g, "")).replace(/&nbsp;/g, " ").trim().slice(0, 600) : "",
     // Notes AlloCiné sur 5 : [note, nombre] (spectateurs = au moins 20 votes, presse = au moins 3 critiques)
     us: rating(m.stats?.userRating, 20),
