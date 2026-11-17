@@ -91,7 +91,7 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
 - Badges sortie (v22) : « Nouveau » (sortie < 7 j) seulement pour les vrais nouveaux films ; ressortie = année de
   production < année − 1 et date de sortie AlloCiné ≥ 2 ans après (`isRerelease`) → badge gris « Ressortie » (< 30 j),
   fiche : « Ressortie (film de 2021) : 11 novembre 2026 ».
-- Notes (v23) : pastille AlloCiné dessinée en SVG (`AC_ICON` : carré jaune, ticket + téléphone) devant les notes
+- Notes (v23) : pastille AlloCiné dessinée en SVG (`AC_ICON`, v24 : redessiné d'après le vrai logo fourni par l'utilisateur : carré #222, ticket jaune incliné à encoches, combiné sombre) devant les notes
   spectateurs/presse ; `.movie` sans overflow:hidden (ses coins arrondis rognaient la pastille IMDb).
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
