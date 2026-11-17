@@ -54,8 +54,8 @@ function dayLabel(d, long = false) {
 // Notes : IMDb sur 10 (m.im = [note, votes]), AlloCiné spectateurs / presse sur 5 (m.us, m.pr = [note, nombre]).
 const num1 = (x) => String(x).replace(".", ",");
 const kVotes = (n) => (n >= 1000 ? `${num1(Math.round(n / 100) / 10)} k` : String(n));
-// Petite pastille AlloCiné (dessinée ici : carré jaune, ticket avec un téléphone) devant les notes AlloCiné.
-const AC_ICON = `<svg class="r-ac" viewBox="0 0 512 512" aria-label="AlloCiné"><rect width="512" height="512" rx="96" fill="#222"/><g transform="rotate(-10 256 256)"><rect x="161" y="96" width="190" height="320" rx="12" fill="#fecc00"/><circle cx="256" cy="96" r="38" fill="#222"/><circle cx="256" cy="416" r="38" fill="#222"/><path transform="translate(256 256) rotate(45) scale(6.2) translate(-12 -12)" d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" fill="#222"/></g></svg>`;
+// Logo AlloCiné (image fournie par l'utilisateur, icons/allocine-v1.png) devant les notes AlloCiné.
+const AC_ICON = `<img class="r-ac" src="icons/allocine-v1.png" alt="AlloCiné" width="16" height="16">`;
 function ratingsShort(m) {
   const out = [];
   if (m?.im) out.push(`<span class="r-imdb">IMDb</span> ${num1(m.im[0])}`);
