@@ -17,7 +17,7 @@ const HOURS = [0, 12, 14, 18, 20];
 const RADII = [2, 5, 10, 20, 30, 50];
 
 // ------------------------------------------------------------ État
-const data = { meta: null, cinemas: new Map(), movies: {}, days: {}, last: {} };
+const data = { meta: null, cinemas: new Map(), movies: {}, days: {}, progress: { h: {}, p: {} } };
 const st = {
   tab: "films",
   day: null,
@@ -73,9 +73,52 @@ function isNew(m) { return m?.r && (Date.parse(st.day) - Date.parse(m.r)) / 8640
 function poster(m, cls = "") {
   return m?.p ? `<img src="${esc(m.p)}" alt="" loading="lazy" decoding="async" class="${cls}" referrerpolicy="no-referrer">` : `<div class="ph">${esc(m?.t || "")}</div>`;
 }
-// Derniers jours (calculés par le robot) : dernier jour du film dans ce cinéma s'il en part, sinon null.
-function leavingDay(cid, mid) { const d = data.last[cid]?.[mid] || data.movies[mid]?.ld; return d && d >= today() ? d : null; }
-function filmLeaving(m) { return m?.ld && m.ld >= today() ? m.ld : null; }
+// ---- Dernière chance (v19) : calculée ICI, car elle dépend de ta position et de ton rayon (qui ne quittent pas
+// le téléphone). Un film est en « dernière chance » s'il n'est plus programmé dans AUCUN cinéma de ta zone (rayon de
+// Réglages autour de ta position ; sans position : toute l'Île-de-France) à partir de mercredi prochain (changement
+// de programme), et seulement si tous les cinémas de ta zone qui le passent ont déjà publié ce mercredi.
+// Données du robot : data/progress.json { h: {cinéma: fin de programmation publiée}, p: {cinéma: {film: [dernier jour, séances]}} }.
+const addDays = (d, k) => new Date(Date.parse(d + "T12:00:00Z") + k * 86400000).toISOString().slice(0, 10);
+const weekday = (d) => new Date(d + "T12:00:00Z").getUTCDay();
+function nextWednesday() { const t = today(); for (let k = 1; k <= 7; k++) if (weekday(addDays(t, k)) === 3) return addDays(t, k); }
+let lcCache = null;
+function lastChanceInfo() {
+  const key = [data.meta?.updatedAt, today(), st.pos?.lat, st.pos?.lng, st.radius].join("|");
+  if (lcCache?.key === key) return lcCache;
+  const wed = nextWednesday(), t = today(), H = data.progress.h || {}, P = data.progress.p || {};
+  const zone = [...data.cinemas.values()].filter((c) => P[c.id] && (!st.pos || (distOf(c) ?? 1e9) <= st.radius)).map((c) => c.id);
+  const film = {};
+  for (const cid of zone) {
+    for (const [mid, [last, n]] of Object.entries(P[cid])) {
+      const f = (film[mid] ||= { last: null, n: 0, unknown: false, continues: false });
+      if (last >= wed) f.continues = true;
+      else if ((H[cid] || "") < wed) f.unknown = true; // ce cinéma n'a pas encore publié mercredi : on ne sait pas
+      if (last < wed && last >= t && (!f.last || last > f.last)) f.last = last;
+      f.n += n;
+    }
+  }
+  const films = new Map();
+  for (const [mid, f] of Object.entries(film)) if (!f.continues && !f.unknown && f.n >= 4 && f.last) films.set(mid, f.last);
+  const published = zone.filter((id) => (H[id] || "") >= wed).length;
+  return (lcCache = { key, wed, films, zone: zone.length, published });
+}
+function lastChance(mid) { return lastChanceInfo().films.get(mid) || null; }
+// Dans un cinéma précis : le film n'y est plus programmé à partir de mercredi (cinéma qui a publié mercredi).
+function leavingHere(cid, mid) {
+  const e = data.progress.p?.[cid]?.[mid], wed = lastChanceInfo().wed;
+  return e && (data.progress.h?.[cid] || "") >= wed && e[0] < wed && e[0] >= today() && e[1] >= 2 ? e[0] : null;
+}
+function zoneLabel() { return st.pos ? `à moins de ${st.radius} km` : "en Île-de-France"; }
+function lastChanceBanner() {
+  if (!st.f.leaving) return "";
+  const i = lastChanceInfo();
+  const lbl = dayLabel(i.wed, true);
+  const from = lbl === "Demain" ? "à partir de demain" : `à partir du ${lbl}`;
+  const of = lbl === "Demain" ? "de demain" : `du ${lbl}`;
+  if (!i.published) return `<p class="lc-banner">Programmes ${esc(of)} pas encore publiés (lundi ou mardi) : impossible de savoir quels films partiront.</p>`;
+  if (i.published < i.zone) return `<p class="lc-banner">Plus à l'affiche ${esc(zoneLabel())} ${esc(from)} · ${i.published}/${i.zone} cinémas ont publié</p>`;
+  return `<p class="lc-banner">Plus à l'affiche ${esc(zoneLabel())} ${esc(from)}</p>`;
+}
 function leavingTag(day, here = false) {
   if (!day) return "";
   const when = day === st.day ? (here ? "Dernier jour ici" : "Dernier jour") : `${here ? "Dernière séance ici" : "Dernière séance"} ${dayLabel(day).toLowerCase()}`;
@@ -110,7 +153,7 @@ async function rowsFor(day, { ignoreQuery = false, movieId = null, cinemaId = nu
   for (const [cid, mid, time, v, fmts, url] of raw) {
     if (movieId && mid !== movieId) continue;
     if (cinemaId && cid !== cinemaId) continue;
-    if (f.leaving && !leavingDay(cid, mid)) continue;
+    if (f.leaving && !lastChance(mid)) continue;
     const c = data.cinemas.get(cid);
     if (!c) continue;
     if (f.cinepass && !c.cp) continue;
@@ -121,7 +164,7 @@ async function rowsFor(day, { ignoreQuery = false, movieId = null, cinemaId = nu
     if (from && tkey(time) < from) continue;
     if (past && tkey(time) < past) continue;
     const d = distOf(c);
-    if (f.near && st.pos && (d == null || d > st.radius)) continue;
+    if ((f.near || f.leaving) && st.pos && (d == null || d > st.radius)) continue; // « dernière chance » = dans ta zone
     const m = data.movies[mid];
     if (tokens.length) {
       const hay = norm(`${m?.t} ${c.name} ${c.city} ${c.zip}`);
@@ -151,6 +194,7 @@ async function render() {
   const el = $(`#tab-${st.tab}`);
   if (st.tab !== "settings" && el.dataset.sig === sig) return;
   await views[st.tab]?.(el, token);
+  if (token === renderToken && (st.tab === "films" || st.tab === "now")) el.insertAdjacentHTML("afterbegin", lastChanceBanner());
   if (token === renderToken) el.dataset.sig = sig;
 }
 function viewSignature(tab) {
@@ -240,7 +284,7 @@ views.films = async (el, token) => {
   el.innerHTML = (list.length ? `<p class="meta-line">${esc(dayLabel(st.day, true))} · ${nb(list.length, "film")} · ${nb(rows.length, "séance")}</p>
   <div class="grid">${list.map((g) => `
     <button class="movie" data-movie="${g.mid}" type="button">
-      <div class="poster">${poster(g.m)}<span class="count">${nb(g.cines.size, "cinéma")}</span>${isNew(g.m) && !filmLeaving(g.m) ? `<span class="new">Nouveau</span>` : ""}${filmLeaving(g.m) ? `<span class="last-days">${filmLeaving(g.m) === st.day ? "Dernier jour" : "Derniers jours"}</span>` : ""}</div>
+      <div class="poster">${poster(g.m)}<span class="count">${nb(g.cines.size, "cinéma")}</span>${isNew(g.m) && !lastChance(g.mid) ? `<span class="new">Nouveau</span>` : ""}${lastChance(g.mid) ? `<span class="last-days">${lastChance(g.mid) === st.day ? "Dernier jour" : "Dernière chance"}</span>` : ""}</div>
       <div class="mt">${esc(g.m?.t)}</div>
       <div class="ms">${esc([runtime(g.m), g.m?.g?.[0]].filter(Boolean).join(" · "))}${st.pos && g.dmin < Infinity ? ` · ${fmtKm(g.dmin)}` : ""}</div>
       ${ratingsShort(g.m)}
@@ -512,13 +556,13 @@ async function showMovie(mid) {
     ${peopleBlock("Avec", m?.cast)}
     ${ratingsFull(m)}
     ${syn}
-    ${filmLeaving(m) ? `<p class="leaving-note">⏳ Quitte l'affiche : dernière séance prévue ${esc(whenText(filmLeaving(m)))}.</p>` : ""}
+    ${lastChance(mid) ? `<p class="leaving-note">⏳ Dernière chance ${esc(zoneLabel())} : dernière séance ${esc(whenText(lastChance(mid)))}, plus programmé à partir de mercredi.</p>` : ""}
     ${dayChipsInSheet(true)}
     ${activeFiltersLine(true)}
     <p class="meta-line">${nb(groups.length, "cinéma")} · ${nb(rows.length, "séance")}${st.pos ? " · du plus proche au plus loin" : ""}</p>
     <div class="list">${groups.map((g) => `
       <div class="glass card">
-        <button class="card-head" data-cinema="${g.c.id}" type="button"><div><div class="name">${esc(g.c.name)}${cpBadge(g.c)}</div><div class="sub">${esc(cineSub(g.c))}</div>${filmLeaving(m) ? "" : leavingTag(data.last[g.c.id]?.[mid], true)}</div><div class="right">›</div></button>
+        <button class="card-head" data-cinema="${g.c.id}" type="button"><div><div class="name">${esc(g.c.name)}${cpBadge(g.c)}</div><div class="sub">${esc(cineSub(g.c))}</div>${leavingTag(leavingHere(g.c.id, mid), true)}</div><div class="right">›</div></button>
         <div class="times">${g.rows.map(timeChip).join("")}</div>
       </div>`).join("") || emptyState()}</div>`, "movie", mid);
 }
@@ -544,7 +588,7 @@ async function showCinema(cid) {
       <div class="film-row">
         <button class="thumb" data-movie="${mid}" type="button">${poster(data.movies[mid])}</button>
         <div class="info"><button class="ft" data-movie="${mid}" type="button">${esc(data.movies[mid]?.t)}</button>
-          <div class="fs">${esc(runtime(data.movies[mid]))}</div>${leavingTag(leavingDay(cid, mid), true)}
+          <div class="fs">${esc(runtime(data.movies[mid]))}</div>${leavingTag(leavingHere(cid, mid), true)}
           <div class="times">${rs.map(timeChip).join("")}</div></div>
       </div>`).join("") || emptyState()}</div>`, "cinema", cid);
 }
@@ -556,7 +600,7 @@ function showFilters() {
     <div class="f-block"><h4>Carte</h4><div class="chips"><button class="chip ${f.cinepass ? "on" : ""}" data-ff="cinepass" type="button">CinéPass acceptée</button></div></div>
     <div class="f-block"><h4>Version</h4><div class="chips">${[["", "Toutes"], ["VF", "VF"], ["VOST", "VO / VOST"]].map(([v, l]) => `<button class="chip ${f.version === v ? "on" : ""}" data-fv="${v}" type="button">${l}</button>`).join("")}</div></div>
     <div class="f-block"><h4>À partir de</h4><div class="chips">${HOURS.map((h) => `<button class="chip ${f.fromHour === h ? "on" : ""}" data-fh="${h}" type="button">${h ? h + " h" : "Toute la journée"}</button>`).join("")}</div></div>
-    <div class="f-block"><h4>À l'affiche</h4><div class="chips"><button class="chip ${f.leaving ? "on" : ""}" data-ff="leaving" type="button">Dernière chance (films qui partent)</button></div></div>
+    <div class="f-block"><h4>À l'affiche</h4><div class="chips"><button class="chip ${f.leaving ? "on" : ""}" data-ff="leaving" type="button">Dernière chance (plus à l'affiche près de moi mercredi prochain)</button></div></div>
     <div class="f-block"><h4>Format</h4><div class="chips">${FORMATS.map((x) => `<button class="chip ${f.formats.includes(x) ? "on" : ""}" data-fx="${esc(x)}" type="button">${esc(x)}</button>`).join("")}</div></div>
     <div class="f-block"><h4>Département</h4><div class="chips">${Object.entries(DEPTS).map(([k, l]) => `<button class="chip ${f.deps.includes(k) ? "on" : ""}" data-fd="${k}" type="button">${esc(l)} <span class="sub">${k}</span></button>`).join("")}</div></div>
     <div class="f-block"><h4>Près de moi</h4><div class="chips">${st.pos
@@ -698,7 +742,7 @@ async function boot() {
   try {
     const [meta, cinemas, movies] = await Promise.all([getJson("data/meta.json"), getJson("data/cinemas.json"), getJson("data/movies.json")]);
     data.meta = meta; data.movies = movies;
-    data.last = await getJson("data/last.json").catch(() => ({})); // films qui quittent un cinéma (facultatif)
+    data.progress = await getJson("data/progress.json").catch(() => ({ h: {}, p: {} })); // pour « dernière chance »
     for (const c of cinemas) data.cinemas.set(c.id, c);
   } catch (e) {
     $("#tab-films").innerHTML = `<div class="empty"><b>Données indisponibles</b>Vérifie ta connexion puis rouvre l'app.</div>`;

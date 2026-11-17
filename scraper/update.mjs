@@ -308,60 +308,36 @@ async function addImdbRatings(movies) {
   console.log(`  notes IMDb : ${n}/${Object.keys(movies).length} films (${Math.round((Date.now() - t0) / 1000)} s)`);
 }
 
-// ---------------------------------------------------------------- Derniers jours
-// Un film « part » d'un cinéma s'il n'y a plus de séance pendant au moins MIN_GAP jours (ou dès le mercredi suivant,
-// jour du changement de programme) avant la fin de la
-// programmation DÉJÀ PUBLIÉE par ce cinéma (les cinémas publient leur semaine suivante le lundi/mardi : on ne
-// juge donc que sur ce que chaque cinéma a publié). Un film « part » tout court s'il part de tous ses cinémas.
-// Sorties : movies[id].ld = dernier jour programmé (seulement s'il part partout), data/last.json =
-// { idCinéma: { idFilm: dernierJour } } pour les films qui quittent ce cinéma.
-const MIN_GAP = 2;
-// Seulement les films vraiment « à l'affiche » : au moins 4 séances sur au moins 2 jours dans ce cinéma (les
-// séances uniques de ciné-club / rétrospectives ne sont pas des « derniers jours »), ou bien une dernière séance
-// aujourd'hui d'un film très programmé (≥ 10 séances en tout : on ne voit pas les jours passés). Badge global
-// seulement si le film part de TOUS ses cinémas et compte au moins 8 séances.
-const dayDiff = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
+// ---------------------------------------------------------------- Dernière chance (données pour l'app)
+// Le calcul « dernière chance » se fait DANS LE TÉLÉPHONE (il dépend de la position et du rayon choisis, qui ne
+// quittent jamais l'appareil). Le robot fournit data/progress.json :
+//   h : { idCinéma: dernier jour de programmation PUBLIÉE } — dernier jour avec ≥ 40 % des séances habituelles
+//       du cinéma (quelques avant-premières lointaines ne comptent pas comme « semaine publiée ») ;
+//   p : { idCinéma: { idFilm: [dernier jour programmé, nombre de séances sur la période] } }.
 async function markLastDays() {
   const files = (await readdir(path.join(DATA, "days"))).filter((f) => f.endsWith(".json")).sort();
-  const firstDay = files[0]?.slice(0, 10);
-  const movies = await readJson(path.join(DATA, "movies.json"), {});
-  // Fin de la programmation publiée d'un cinéma = dernier jour avec au moins 40 % de son nombre de séances
-  // habituel (un cinéma qui n'a publié que mercredi + quelques avant-premières le dimanche s'arrête à mercredi).
-  const perDay = {}, cinemaLast = {}, pair = {}, total = {};
+  const perDay = {}, p = {};
   for (const f of files) {
     const day = f.slice(0, 10);
     for (const [cid, mid] of await readJson(path.join(DATA, "days", f), [])) {
-      ((perDay[cid] ||= {})[day] = (perDay[cid][day] || 0) + 1);
-      total[mid] = (total[mid] || 0) + 1;
-      const p = ((pair[cid] ||= {})[mid] ||= { last: day, days: new Set(), n: 0 });
-      p.last = day; p.days.add(day); p.n++;
+      (perDay[cid] ||= {})[day] = (perDay[cid][day] || 0) + 1;
+      const e = ((p[cid] ||= {})[mid] ||= [day, 0]);
+      e[0] = day; e[1]++;
     }
   }
+  const h = {};
   for (const [cid, counts] of Object.entries(perDay)) {
     const max = Math.max(...Object.values(counts));
-    cinemaLast[cid] = Object.keys(counts).filter((d) => counts[d] >= 0.4 * max).sort().pop();
+    h[cid] = Object.keys(counts).filter((d) => counts[d] >= 0.4 * max).sort().pop();
   }
-  const last = {}, everywhere = {}, filmLast = {};
-  for (const [cid, films] of Object.entries(pair)) {
-    for (const [mid, p] of Object.entries(films)) {
-      filmLast[mid] = filmLast[mid] > p.last ? filmLast[mid] : p.last;
-      const regular = (p.n >= 4 && p.days.size >= 2) || (p.last === firstDay && total[mid] >= 10);
-      const gap = dayDiff(p.last, cinemaLast[cid]);
-      // le mercredi, tous les cinémas changent de programme : absent du programme publié d'un mercredi = il part
-      const crossesWednesday = gap >= 1 && [...Array(gap)].some((_, k) => new Date(Date.parse(p.last) + (k + 1) * 86400000).getUTCDay() === 3);
-      const leaving = regular && (gap >= MIN_GAP || crossesWednesday);
-      if (leaving) (last[cid] ||= {})[mid] = p.last;
-      everywhere[mid] = (everywhere[mid] ?? true) && leaving;
-    }
-  }
-  let n = 0;
-  for (const [mid, m] of Object.entries(movies)) {
-    if (everywhere[mid] && total[mid] >= 8) { m.ld = filmLast[mid]; n++; } else delete m.ld;
-  }
-  await writeJson(path.join(DATA, "movies.json"), movies);
-  await writeJson(path.join(DATA, "last.json"), last);
-  const pairs = Object.values(last).reduce((k, o) => k + Object.keys(o).length, 0);
-  console.log(`Derniers jours : ${n} films quittent l'affiche, ${pairs} films quittent un cinéma.`);
+  await writeJson(path.join(DATA, "progress.json"), { h, p });
+  // anciens formats (v12–v18), plus utilisés
+  const movies = await readJson(path.join(DATA, "movies.json"), {});
+  let cleaned = false;
+  for (const m of Object.values(movies)) if ("ld" in m) { delete m.ld; cleaned = true; }
+  if (cleaned) await writeJson(path.join(DATA, "movies.json"), movies);
+  await unlink(path.join(DATA, "last.json")).catch(() => {});
+  console.log(`Dernière chance : programmation publiée de ${Object.keys(h).length} cinémas.`);
 }
 
 // ---------------------------------------------------------------- Principal

@@ -5,3 +5,4 @@ _site/
 node_modules/
 data/imdb-ids.json
 data/last.json
+data/progress.json
