@@ -387,13 +387,17 @@ function closeSheet() {
   $panel.addEventListener("touchend", end);
   $panel.addEventListener("touchcancel", end);
 })();
-function dayChipsInSheet() {
-  return `<div class="chips sheet-days">${(data.meta?.days || []).filter((d) => d >= today())
+// withCinepass : pastille CinéPass en tête (fiche film), pour changer le filtre sans revenir à l'accueil.
+function dayChipsInSheet(withCinepass = false) {
+  const cp = withCinepass
+    ? `<button class="chip toggle cp-chip ${st.f.cinepass ? "on" : ""}" data-sheet-cp type="button"><span class="cp-dot"></span>CinéPass</button><span class="chip-sep"></span>`
+    : "";
+  return `<div class="chips sheet-days">${cp}${(data.meta?.days || []).filter((d) => d >= today())
     .map((d) => `<button class="chip ${d === st.day ? "on" : ""}" data-day="${d}" type="button">${esc(dayLabel(d))}</button>`).join("")}</div>`;
 }
-function activeFiltersLine() {
+function activeFiltersLine(skipCinepass = false) {
   const f = st.f, parts = [];
-  if (f.cinepass) parts.push("CinéPass");
+  if (f.cinepass && !skipCinepass) parts.push("CinéPass");
   if (f.version) parts.push(f.version);
   if (f.near && st.pos) parts.push(`≤ ${st.radius} km`);
   if (f.fromHour) parts.push(`après ${f.fromHour} h`);
@@ -461,8 +465,8 @@ async function showMovie(mid) {
     ${ratingsFull(m)}
     ${syn}
     ${filmLeaving(m) ? `<p class="leaving-note">⏳ Quitte l'affiche : dernière séance prévue ${esc(whenText(filmLeaving(m)))}.</p>` : ""}
-    ${dayChipsInSheet()}
-    ${activeFiltersLine()}
+    ${dayChipsInSheet(true)}
+    ${activeFiltersLine(true)}
     <p class="meta-line">${nb(groups.length, "cinéma")} · ${nb(rows.length, "séance")}${st.pos ? " · du plus proche au plus loin" : ""}</p>
     <div class="list">${groups.map((g) => `
       <div class="glass card">
@@ -555,6 +559,7 @@ document.addEventListener("click", async (e) => {
     return;
   }
   if (d.movie) { e.preventDefault(); showMovie(d.movie); return; }
+  if (d.sheetCp !== undefined) { st.f.cinepass = !st.f.cinepass; saveFilters(); renderChips(); sheet.dirty = true; refreshSheet(); return; }
   if (d.person) { showPerson(d.person, d.pid || null); return; }
   if (d.syn !== undefined) { const p = t.nextElementSibling; p.hidden = !p.hidden; t.textContent = p.hidden ? "Afficher le résumé ›" : "Masquer le résumé ‹"; return; }
   if (d.cinema) { showCinema(d.cinema); return; }

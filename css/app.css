@@ -44,7 +44,7 @@ h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:2px 0 10px}
 .chip{flex:none;height:32px;padding:0 13px;border-radius:999px;font-size:14px;font-weight:600;
   background:rgba(118,118,128,.20);color:var(--ink);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .chip.on{background:var(--ink);color:#0b0b10}
-.chip.toggle[data-f=cinepass].on{background:var(--cp);color:var(--cp-ink)}
+.chip.toggle[data-f=cinepass].on,.chip.cp-chip.on{background:var(--cp);color:var(--cp-ink)}
 .chip .sub{font-weight:500;opacity:.65;font-size:12px}
 .cp-dot{width:8px;height:8px;border-radius:50%;background:var(--cp)}
 .chip.on .cp-dot{background:var(--cp-ink)}
@@ -217,3 +217,4 @@ nav#tabs .lg-host{width:100%;--lg-tab-accent:var(--accent)}
 .sheet-days{touch-action:pan-x pan-y}
 .syn-toggle{display:block;margin:0 0 10px;padding:2px 0;background:none;color:var(--ink-soft);font-size:14px;font-weight:500}
 .syn{margin:-2px 0 12px}
+.chip-sep{flex:none;width:1px;align-self:stretch;margin:4px 2px;background:rgba(255,255,255,.18)}
