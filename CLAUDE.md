@@ -77,6 +77,10 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
   « Afficher le résumé › » en simple texte gris ; affiche de la fiche réduite à 92 px.
   **v15** : pastille CinéPass en tête de la ligne des jours dans la fiche film (`dayChipsInSheet(true)`, `data-sheet-cp`),
   synchronisée avec celle de l'accueil.
+- **Recherche (v16)** : croix ✕ dans la barre (`#q-clear`, la croix native iOS n'existe pas ; celle de WebKit masquée).
+  Pendant une recherche, l'onglet Films passe en LISTE compacte ; les films dont le titre correspond mais sans séance le
+  jour choisi (avec les filtres) sont listés en dessous (« Pas de séance aujourd'hui ») avec « Prochaine séance : <jour> › »
+  (`offDayMatches`, `data-open-movie` : change de jour ET ouvre la fiche). Film introuvable de la semaine : message clair.
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
   cache du robot ; la vieille copie de la branche `apercu-data` (16 nov.) ne sert que si le cache est vide.

@@ -39,6 +39,8 @@ h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:2px 0 10px}
 .search{display:flex;align-items:center;gap:8px;background:rgba(118,118,128,.22);border-radius:12px;padding:0 10px;height:38px}
 .search svg{width:18px;height:18px;color:var(--ink-soft);flex:none}
 .search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--ink);font:inherit;font-size:16px}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+#q-clear{flex:none;width:22px;height:22px;border-radius:50%;background:rgba(235,235,245,.3);color:#1c1c1e;font-size:11px;font-weight:800;display:grid;place-items:center;padding:0}
 .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:10px -16px 0;padding:0 16px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:32px;padding:0 13px;border-radius:999px;font-size:14px;font-weight:600;
@@ -218,3 +220,9 @@ nav#tabs .lg-host{width:100%;--lg-tab-accent:var(--accent)}
 .syn-toggle{display:block;margin:0 0 10px;padding:2px 0;background:none;color:var(--ink-soft);font-size:14px;font-weight:500}
 .syn{margin:-2px 0 12px}
 .chip-sep{flex:none;width:1px;align-self:stretch;margin:4px 2px;background:rgba(255,255,255,.18)}
+
+/* Recherche : films sans séance le jour choisi */
+.off-day .film-row .thumb{width:52px}
+.off-day .ratings{font-size:12.5px;font-weight:600;margin-top:2px}
+.next-btn{margin-top:8px;padding:6px 12px;border-radius:999px;background:var(--ink);color:#0b0b10;font-size:13.5px;font-weight:650}
+.off-note{font-size:13px;color:var(--ink-soft);margin-top:2px}

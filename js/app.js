@@ -204,16 +204,64 @@ views.films = async (el, token) => {
     g.n++; g.cines.add(r.c.id); if (r.d != null) g.dmin = Math.min(g.dmin, r.d);
   }
   const list = [...byMovie.values()].sort((a, b) => b.cines.size - a.cines.size || b.n - a.n);
-  if (!list.length) { el.innerHTML = emptyState("Aucun film ne correspond."); return; }
-  el.innerHTML = `<p class="meta-line">${esc(dayLabel(st.day, true))} · ${nb(list.length, "film")} · ${nb(rows.length, "séance")}</p>
+  // Recherche : les films qui correspondent mais n'ont pas de séance ce jour-là (avec les filtres actuels)
+  // sont montrés quand même, avec un bouton vers leur prochaine séance.
+  const off = st.q ? await offDayMatches(new Set(byMovie.keys())) : [];
+  if (token !== renderToken) return;
+  if (!list.length && !off.length) {
+    el.innerHTML = st.q
+      ? `<div class="empty"><b>Aucun film ne correspond</b>Rien à l'affiche cette semaine en Île-de-France pour « ${esc(st.q)} »${st.f.cinepass || st.f.near || st.f.version || st.f.formats.length || st.f.deps.length || st.f.fromHour || st.f.leaving ? " avec tes filtres" : ""}.</div>`
+      : emptyState("Aucun film ne correspond.");
+    return;
+  }
+  const offHtml = off.length ? `
+  <div class="section-title">Pas de séance ${esc(dayLabel(st.day).toLowerCase())}</div>
+  <div class="glass card off-day">${off.map((o) => `
+    <div class="film-row">
+      <button class="thumb" data-movie="${o.mid}" type="button">${poster(o.m)}</button>
+      <div class="info"><button class="ft" data-movie="${o.mid}" type="button">${esc(o.m.t)}</button>
+        <div class="off-note">Aucune séance ${esc(dayLabel(st.day).toLowerCase())}${st.f.cinepass || st.f.near || st.f.version || st.f.formats.length || st.f.deps.length || st.f.fromHour || st.f.leaving ? " (avec tes filtres)" : ""}</div>
+        ${o.next ? `<button class="next-btn" data-day="${o.next}" data-open-movie="${o.mid}" type="button">Prochaine séance : ${esc(dayLabel(o.next).toLowerCase())} ›</button>` : `<div class="off-note">Pas d'autre séance prévue cette semaine</div>`}
+      </div>
+    </div>`).join("")}</div>` : "";
+  if (st.q) { // recherche : liste compacte, pour voir d'un coup les films à l'affiche ce jour-là et les autres
+    el.innerHTML = (list.length ? `<p class="meta-line">${esc(dayLabel(st.day, true))} · ${nb(list.length, "film")}</p>
+    <div class="glass card off-day">${list.map((g) => `
+      <div class="film-row">
+        <button class="thumb" data-movie="${g.mid}" type="button">${poster(g.m)}</button>
+        <div class="info"><button class="ft" data-movie="${g.mid}" type="button">${esc(g.m?.t)}</button>
+          <div class="off-note">${esc([runtime(g.m), g.m?.g?.[0]].filter(Boolean).join(" · "))}</div>
+          ${ratingsShort(g.m)}
+          <button class="next-btn" data-movie="${g.mid}" type="button">${nb(g.cines.size, "cinéma")} · ${nb(g.n, "séance")} ›</button>
+        </div>
+      </div>`).join("")}</div>` : "") + offHtml;
+    return;
+  }
+  el.innerHTML = (list.length ? `<p class="meta-line">${esc(dayLabel(st.day, true))} · ${nb(list.length, "film")} · ${nb(rows.length, "séance")}</p>
   <div class="grid">${list.map((g) => `
     <button class="movie" data-movie="${g.mid}" type="button">
       <div class="poster">${poster(g.m)}<span class="count">${nb(g.cines.size, "cinéma")}</span>${isNew(g.m) && !filmLeaving(g.m) ? `<span class="new">Nouveau</span>` : ""}${filmLeaving(g.m) ? `<span class="last-days">${filmLeaving(g.m) === st.day ? "Dernier jour" : "Derniers jours"}</span>` : ""}</div>
       <div class="mt">${esc(g.m?.t)}</div>
       <div class="ms">${esc([runtime(g.m), g.m?.g?.[0]].filter(Boolean).join(" · "))}${st.pos && g.dmin < Infinity ? ` · ${fmtKm(g.dmin)}` : ""}</div>
       ${ratingsShort(g.m)}
-    </button>`).join("")}</div>`;
+    </button>`).join("")}</div>` : "") + offHtml;
 };
+
+// Films dont le titre correspond à la recherche mais absents du jour choisi : prochain jour avec séance.
+async function offDayMatches(shown) {
+  const tokens = norm(st.q).split(/\s+/).filter(Boolean);
+  if (!tokens.length) return [];
+  const hits = Object.entries(data.movies).filter(([mid, m]) => !shown.has(mid) && tokens.every((t) => norm(`${m.t} ${m.ot || ""}`).includes(t)));
+  if (!hits.length || hits.length > 30) return [];
+  const days = (data.meta?.days || []).filter((d) => d >= today() && d > st.day);
+  const out = [];
+  for (const [mid, m] of hits) {
+    let next = null;
+    for (const d of days) { if ((await rowsFor(d, { ignoreQuery: true, movieId: mid })).length) { next = d; break; } }
+    out.push({ mid, m, next });
+  }
+  return out.sort((a, b) => (a.next || "9").localeCompare(b.next || "9"));
+}
 
 // AlloCiné donne pour Pathé des liens en anglais (s.pathe.fr/en/…) : l'app Pathé s'ouvrait en anglais.
 const frLink = (u) => (u ? u.replace(/^https:\/\/s\.pathe\.fr\/en\//, "https://s.pathe.fr/fr/") : u);
@@ -555,7 +603,8 @@ document.addEventListener("click", async (e) => {
   if (d.tab) { st.tab = d.tab; st.nowLimit = 60; scrollTo(0, 0); render(); return; }
   if (d.day) {
     st.day = d.day; st.nowLimit = 60;
-    if (sheet.kind) { sheet.dirty = true; renderChips(); refreshSheet(); } else render();
+    if (sheet.kind) { sheet.dirty = true; renderChips(); refreshSheet(); } else await render();
+    if (d.openMovie) showMovie(d.openMovie); // « Prochaine séance » : on ouvre directement la fiche du film ce jour-là
     return;
   }
   if (d.movie) { e.preventDefault(); showMovie(d.movie); return; }
@@ -602,7 +651,13 @@ document.addEventListener("input", (e) => {
   if (e.target.id === "glass") setGlass(Number(e.target.value), true);
 });
 let qTimer = 0;
-$("#q").addEventListener("input", (e) => { clearTimeout(qTimer); qTimer = setTimeout(() => { st.q = e.target.value.trim(); st.nowLimit = 60; render(); }, 150); });
+$("#q").addEventListener("input", (e) => {
+  $("#q-clear").hidden = !e.target.value;
+  clearTimeout(qTimer); qTimer = setTimeout(() => { st.q = e.target.value.trim(); st.nowLimit = 60; render(); }, 150);
+});
+$("#q-clear").addEventListener("click", () => {
+  const q = $("#q"); q.value = ""; $("#q-clear").hidden = true; st.q = ""; st.nowLimit = 60; render(); q.focus();
+});
 $("#q").addEventListener("keydown", (e) => { if (e.key === "Enter") e.target.blur(); });
 
 // ------------------------------------------------------------ Barre d'onglets en verre (téléphone)
