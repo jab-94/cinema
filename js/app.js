@@ -69,7 +69,16 @@ function ratingsFull(m) {
   return out.length ? `<div class="rates">${out.join("")}</div>` : "";
 }
 function runtime(m) { if (!m?.d) return ""; const h = Math.floor(m.d / 60), mn = m.d % 60; return h ? `${h} h ${String(mn).padStart(2, "0")}` : `${mn} min`; }
-function isNew(m) { return m?.r && (Date.parse(st.day) - Date.parse(m.r)) / 86400000 < 7 && m.r <= st.day; }
+// Ressortie = film produit avant l'an dernier mais dont la « date de sortie » AlloCiné est récente (ex. Dune, 2021,
+// ressorti le 11/11/2026). « Nouveau » seulement pour les vraies nouveautés de la semaine (v22).
+function isRerelease(m) { return !!(m?.y && m.r && m.y < Number(today().slice(0, 4)) - 1 && Number(m.r.slice(0, 4)) - m.y >= 2); }
+function sinceRelease(m) { return m?.r && m.r <= st.day ? (Date.parse(st.day) - Date.parse(m.r)) / 86400000 : Infinity; }
+function isNew(m) { return sinceRelease(m) < 7 && !isRerelease(m); }
+function releaseBadge(m) {
+  if (isNew(m)) return `<span class="new">Nouveau</span>`;
+  if (isRerelease(m) && sinceRelease(m) < 30) return `<span class="new rerelease">Ressortie</span>`;
+  return "";
+}
 function poster(m, cls = "") {
   return m?.p ? `<img src="${esc(m.p)}" alt="" loading="lazy" decoding="async" class="${cls}" referrerpolicy="no-referrer">` : `<div class="ph">${esc(m?.t || "")}</div>`;
 }
@@ -309,7 +318,7 @@ views.films = async (el, token) => {
   el.innerHTML = (list.length ? `<p class="meta-line">${esc(dayLabel(st.day, true))} · ${nb(list.length, "film")} · ${nb(rows.length, "séance")}</p>
   <div class="grid">${list.map((g) => `
     <button class="movie" data-movie="${g.mid}" type="button">
-      <div class="poster">${poster(g.m)}<span class="count">${nb(g.cines.size, "cinéma")}</span>${isNew(g.m) && !lastChance(g.mid) ? `<span class="new">Nouveau</span>` : ""}${lastChance(g.mid) ? `<span class="last-days">${lastChance(g.mid) === st.day ? "Dernier jour" : "Dernière chance"}</span>` : ""}</div>
+      <div class="poster">${poster(g.m)}<span class="count">${nb(g.cines.size, "cinéma")}</span>${lastChance(g.mid) ? "" : releaseBadge(g.m)}${lastChance(g.mid) ? `<span class="last-days">${lastChance(g.mid) === st.day ? "Dernier jour" : "Dernière chance"}</span>` : ""}</div>
       <div class="mt">${esc(g.m?.t)}</div>
       <div class="ms">${esc([runtime(g.m), g.m?.g?.[0]].filter(Boolean).join(" · "))}${st.pos && g.dmin < Infinity ? ` · ${fmtKm(g.dmin)}` : ""}</div>
       ${ratingsShort(g.m)}
@@ -575,7 +584,7 @@ async function showMovie(mid) {
     <div class="film-hero"><div class="poster">${poster(m)}</div>
       <div><h2>${esc(m?.t)}</h2>
         <div class="fs">${esc([runtime(m), (m?.g || []).join(", ")].filter(Boolean).join(" · "))}</div>
-        ${m?.r ? `<div class="fs">Sortie : ${esc(new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(m.r + "T12:00:00")))}</div>` : ""}
+        ${m?.r ? `<div class="fs">${isRerelease(m) ? `Ressortie (film de ${m.y})` : "Sortie"} : ${esc(new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(m.r + "T12:00:00")))}</div>` : ""}
       </div></div>
     ${peopleBlock("Réal.", m?.dir)}
     ${peopleBlock("Avec", m?.cast)}
