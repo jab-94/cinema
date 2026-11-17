@@ -54,18 +54,20 @@ function dayLabel(d, long = false) {
 // Notes : IMDb sur 10 (m.im = [note, votes]), AlloCiné spectateurs / presse sur 5 (m.us, m.pr = [note, nombre]).
 const num1 = (x) => String(x).replace(".", ",");
 const kVotes = (n) => (n >= 1000 ? `${num1(Math.round(n / 100) / 10)} k` : String(n));
+// Petite pastille AlloCiné (dessinée ici : carré jaune, ticket avec un téléphone) devant les notes AlloCiné.
+const AC_ICON = `<svg class="r-ac" viewBox="0 0 16 16" aria-label="AlloCiné"><rect width="16" height="16" rx="3.5" fill="#fecc00"/><path d="M3 4.6h10v2a1.4 1.4 0 0 0 0 2.8v2H3v-2a1.4 1.4 0 0 0 0-2.8z" fill="none" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/><path d="M6.3 6.4c.3-.3.7-.3.9 0l.5.6c.2.2.2.5 0 .7l-.3.3c.3.6.8 1.1 1.4 1.4l.3-.3c.2-.2.5-.2.7 0l.6.5c.3.2.3.6 0 .9l-.4.4c-.4.4-1 .4-1.5.2a5.6 5.6 0 0 1-2.8-2.8c-.2-.5-.2-1.1.2-1.5z" fill="#111"/></svg>`;
 function ratingsShort(m) {
   const out = [];
   if (m?.im) out.push(`<span class="r-imdb">IMDb</span> ${num1(m.im[0])}`);
-  if (m?.us) out.push(`★ ${num1(m.us[0])}`);
-  else if (m?.pr) out.push(`Presse ${num1(m.pr[0])}`);
+  if (m?.us) out.push(`${AC_ICON} ★ ${num1(m.us[0])}`);
+  else if (m?.pr) out.push(`${AC_ICON} Presse ${num1(m.pr[0])}`);
   return out.length ? `<div class="ratings">${out.join(" · ")}</div>` : "";
 }
 function ratingsFull(m) {
   const out = [];
   if (m?.im) out.push(`<span class="rate"><b class="r-imdb">IMDb</b> ${num1(m.im[0])}<small>/10</small></span>`);
-  if (m?.us) out.push(`<span class="rate"><b>Spectateurs</b> ★ ${num1(m.us[0])}<small>/5</small></span>`);
-  if (m?.pr) out.push(`<span class="rate"><b>Presse</b> ★ ${num1(m.pr[0])}<small>/5</small></span>`);
+  if (m?.us) out.push(`<span class="rate">${AC_ICON}<b>Spectateurs</b> ★ ${num1(m.us[0])}<small>/5</small></span>`);
+  if (m?.pr) out.push(`<span class="rate">${AC_ICON}<b>Presse</b> ★ ${num1(m.pr[0])}<small>/5</small></span>`);
   return out.length ? `<div class="rates">${out.join("")}</div>` : "";
 }
 function runtime(m) { if (!m?.d) return ""; const h = Math.floor(m.d / 60), mn = m.d % 60; return h ? `${h} h ${String(mn).padStart(2, "0")}` : `${mn} min`; }
