@@ -47,6 +47,7 @@ h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:2px 0 10px}
   background:rgba(118,118,128,.20);color:var(--ink);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .chip.on{background:var(--ink);color:#0b0b10}
 .chip.toggle[data-f=cinepass].on,.chip.cp-chip.on{background:var(--cp);color:var(--cp-ink)}
+.chip.toggle[data-f=leaving].on{background:#ff453a;color:#fff}
 .chip .sub{font-weight:500;opacity:.65;font-size:12px}
 .cp-dot{width:8px;height:8px;border-radius:50%;background:var(--cp)}
 .chip.on .cp-dot{background:var(--cp-ink)}

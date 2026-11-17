@@ -164,9 +164,9 @@ function renderChips() {
   $("#days").innerHTML = (data.meta?.days || []).filter((d) => d >= today())
     .map((d) => `<button class="chip ${d === st.day ? "on" : ""}" data-day="${d}" type="button">${esc(dayLabel(d))}</button>`).join("");
   const f = st.f;
-  const on = { cinepass: f.cinepass, vf: f.version === "VF", vost: f.version === "VOST", near: f.near, evening: f.fromHour === 18 };
+  const on = { cinepass: f.cinepass, leaving: f.leaving, vf: f.version === "VF", vost: f.version === "VOST", near: f.near, evening: f.fromHour === 18 };
   document.querySelectorAll("#quick .toggle").forEach((b) => b.classList.toggle("on", !!on[b.dataset.f]));
-  const n = f.formats.length + f.deps.length + (f.fromHour && f.fromHour !== 18 ? 1 : 0) + (f.leaving ? 1 : 0);
+  const n = f.formats.length + f.deps.length + (f.fromHour && f.fromHour !== 18 ? 1 : 0);
   $("#filter-count").textContent = n || "";
 }
 
@@ -449,7 +449,7 @@ function activeFiltersLine(skipCinepass = false) {
   if (f.version) parts.push(f.version);
   if (f.near && st.pos) parts.push(`≤ ${st.radius} km`);
   if (f.fromHour) parts.push(`après ${f.fromHour} h`);
-  if (f.leaving) parts.push("derniers jours");
+  if (f.leaving) parts.push("dernière chance");
   parts.push(...f.formats, ...f.deps.map((d) => DEPTS[d]));
   return parts.length ? `<p class="small">Filtres : ${esc(parts.join(", "))}</p>` : "";
 }
@@ -556,7 +556,7 @@ function showFilters() {
     <div class="f-block"><h4>Carte</h4><div class="chips"><button class="chip ${f.cinepass ? "on" : ""}" data-ff="cinepass" type="button">CinéPass acceptée</button></div></div>
     <div class="f-block"><h4>Version</h4><div class="chips">${[["", "Toutes"], ["VF", "VF"], ["VOST", "VO / VOST"]].map(([v, l]) => `<button class="chip ${f.version === v ? "on" : ""}" data-fv="${v}" type="button">${l}</button>`).join("")}</div></div>
     <div class="f-block"><h4>À partir de</h4><div class="chips">${HOURS.map((h) => `<button class="chip ${f.fromHour === h ? "on" : ""}" data-fh="${h}" type="button">${h ? h + " h" : "Toute la journée"}</button>`).join("")}</div></div>
-    <div class="f-block"><h4>À l'affiche</h4><div class="chips"><button class="chip ${f.leaving ? "on" : ""}" data-ff="leaving" type="button">Derniers jours seulement</button></div></div>
+    <div class="f-block"><h4>À l'affiche</h4><div class="chips"><button class="chip ${f.leaving ? "on" : ""}" data-ff="leaving" type="button">Dernière chance (films qui partent)</button></div></div>
     <div class="f-block"><h4>Format</h4><div class="chips">${FORMATS.map((x) => `<button class="chip ${f.formats.includes(x) ? "on" : ""}" data-fx="${esc(x)}" type="button">${esc(x)}</button>`).join("")}</div></div>
     <div class="f-block"><h4>Département</h4><div class="chips">${Object.entries(DEPTS).map(([k, l]) => `<button class="chip ${f.deps.includes(k) ? "on" : ""}" data-fd="${k}" type="button">${esc(l)} <span class="sub">${k}</span></button>`).join("")}</div></div>
     <div class="f-block"><h4>Près de moi</h4><div class="chips">${st.pos
@@ -617,6 +617,7 @@ document.addEventListener("click", async (e) => {
   if (t.closest("#quick") && d.f) {
     const f = st.f;
     if (d.f === "cinepass") f.cinepass = !f.cinepass;
+    if (d.f === "leaving") f.leaving = !f.leaving;
     if (d.f === "vf") f.version = f.version === "VF" ? "" : "VF";
     if (d.f === "vost") f.version = f.version === "VOST" ? "" : "VOST";
     if (d.f === "evening") f.fromHour = f.fromHour === 18 ? 0 : 18;

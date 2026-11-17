@@ -67,6 +67,7 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
   `movies[id].ld` si le film part de TOUS ses cinémas (≥ 8 séances). App : badge orange « Derniers jours / Dernier
   jour » sur l'affiche, encart dans la fiche, « Dernière séance ici … » par cinéma, filtre « Derniers jours seulement ».
   Règles réglées le 17 nov. (1er test : 346 films marqués à tort, surtout ciné-clubs → resserré).
+  **v18** : filtre renommé « Dernière chance », pastille rapide en haut (après CinéPass), rouge #ff453a quand active.
 - **Fiche film (v13)** : résumé MASQUÉ par défaut (« Afficher le résumé », l'utilisateur trouve qu'il spoile) ;
   réalisation et 5 acteurs principaux en pastilles cliquables (`peopleBlock`). Robot : `dir`/`cast` = [nom, id AlloCiné]
   (anciennes données : simple nom, gérées par `person()`). Fiche personne (`showPerson`) : ses films à l'affiche cette
