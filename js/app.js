@@ -214,18 +214,28 @@ function renderChips() {
   $("#filter-count").textContent = n || "";
 }
 
-function emptyState(text = "Aucune séance ne correspond.") {
+// next : premier jour où il y a VRAIMENT une séance avec les filtres actuels (voir nextDayWith) ; null = aucun.
+function emptyState(text = "Aucune séance ne correspond.", next = null, inSheet = false) {
   const tips = [];
   if (st.f.near) tips.push(`le rayon « Près de moi » est de ${st.radius} km`);
   if (st.f.cinepass) tips.push("seuls les cinémas CinéPass sont affichés");
+  if (st.f.leaving) tips.push("seuls les films en dernière chance sont affichés");
   if (st.q) tips.push(`la recherche « ${esc(st.q)} » est active`);
-  const next = nextDay(st.day);
-  const late = st.day === today() && next;
-  const btn = next ? `<p><button class="btn" data-day="${next}" type="button">Voir ${esc(dayLabel(next).toLowerCase())} ›</button></p>` : "";
-  const msg = late && !tips.length ? "Toutes les séances de la journée sont passées." : tips.length ? "Remarque : " + tips.join(", ") + "." : "Essaie un autre jour ou retire un filtre.";
+  const late = !inSheet && st.day === today() && next && !tips.length; // « c'est fini pour aujourd'hui » : pages principales seulement
+  const btn = next
+    ? `<p><button class="btn" data-day="${next}" type="button">Prochaine séance : ${esc(dayLabel(next).toLowerCase())} ›</button></p>`
+    : `<p class="small">Aucune autre séance cette semaine${tips.length ? " avec ces filtres" : ""}.</p>`;
+  const msg = late ? "Toutes les séances de la journée sont passées." : tips.length ? "Remarque : " + tips.join(", ") + "." : "";
   return `<div class="empty"><b>${late && !tips.length ? "C'est fini pour aujourd'hui" : text}</b>${msg}${btn}</div>`;
 }
 
+// Premier jour après celui affiché où il reste au moins une séance (filtres actuels ; opts = film ou cinéma précis).
+async function nextDayWith(opts = {}) {
+  for (const d of (data.meta?.days || []).filter((x) => x > st.day && x >= today())) {
+    if ((await rowsFor(d, opts)).length) return d;
+  }
+  return null;
+}
 function nextDay(d) {
   const days = (data.meta?.days || []).filter((x) => x >= today());
   return days[days.indexOf(d) + 1] || null;
@@ -255,7 +265,7 @@ views.films = async (el, token) => {
   if (!list.length && !off.length) {
     el.innerHTML = st.q
       ? `<div class="empty"><b>Aucun film ne correspond</b>Rien à l'affiche cette semaine en Île-de-France pour « ${esc(st.q)} »${st.f.cinepass || st.f.near || st.f.version || st.f.formats.length || st.f.deps.length || st.f.fromHour || st.f.leaving ? " avec tes filtres" : ""}.</div>`
-      : emptyState("Aucun film ne correspond.");
+      : emptyState("Aucun film ne correspond.", await nextDayWith());
     return;
   }
   const offHtml = off.length ? `
@@ -332,7 +342,7 @@ views.now = async (el, token) => {
   const rows = await rowsFor(st.day);
   if (token !== renderToken) return;
   rows.sort((a, b) => tkey(a.time).localeCompare(tkey(b.time)) || (a.d ?? 1e9) - (b.d ?? 1e9));
-  if (!rows.length) { el.innerHTML = emptyState(); return; }
+  if (!rows.length) { el.innerHTML = emptyState(undefined, await nextDayWith()); return; }
   const shown = rows.slice(0, st.nowLimit);
   const hint = !st.pos ? `<p class="meta-line">Astuce : ajoute ta position dans Réglages puis active « Près de moi » pour ne voir que les séances proches.</p>` : "";
   el.innerHTML = `${hint}<p class="meta-line">${esc(dayLabel(st.day, true))} · ${nb(rows.length, "séance")}, par heure</p>
@@ -365,7 +375,7 @@ views.cinemas = async (el, token) => {
     });
   }
   list.sort((a, b) => (distOf(a) ?? 1e9) - (distOf(b) ?? 1e9) || a.name.localeCompare(b.name, "fr"));
-  if (!list.length) { el.innerHTML = emptyState("Aucun cinéma ne correspond."); return; }
+  if (!list.length) { el.innerHTML = emptyState("Aucun cinéma ne correspond.", await nextDayWith({ ignoreQuery: true })); return; }
   el.innerHTML = `<p class="meta-line">${esc(dayLabel(st.day, true))} · ${nb(list.length, "cinéma")}</p>
   <div class="list">${list.map((c) => `
     <button class="glass card card-head" data-cinema="${c.id}" type="button">
@@ -564,7 +574,7 @@ async function showMovie(mid) {
       <div class="glass card">
         <button class="card-head" data-cinema="${g.c.id}" type="button"><div><div class="name">${esc(g.c.name)}${cpBadge(g.c)}</div><div class="sub">${esc(cineSub(g.c))}</div>${leavingTag(leavingHere(g.c.id, mid), true)}</div><div class="right">›</div></button>
         <div class="times">${g.rows.map(timeChip).join("")}</div>
-      </div>`).join("") || emptyState()}</div>`, "movie", mid);
+      </div>`).join("") || emptyState(`Pas de séance ${dayLabel(st.day).toLowerCase()}`, await nextDayWith({ ignoreQuery: true, movieId: mid }), true)}</div>`, "movie", mid);
 }
 
 async function showCinema(cid) {
@@ -590,7 +600,7 @@ async function showCinema(cid) {
         <div class="info"><button class="ft" data-movie="${mid}" type="button">${esc(data.movies[mid]?.t)}</button>
           <div class="fs">${esc(runtime(data.movies[mid]))}</div>${leavingTag(leavingHere(cid, mid), true)}
           <div class="times">${rs.map(timeChip).join("")}</div></div>
-      </div>`).join("") || emptyState()}</div>`, "cinema", cid);
+      </div>`).join("") || emptyState(`Pas de séance ${dayLabel(st.day).toLowerCase()}`, await nextDayWith({ ignoreQuery: true, cinemaId: cid }), true)}</div>`, "cinema", cid);
 }
 
 function showFilters() {

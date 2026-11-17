@@ -83,6 +83,8 @@ les apps Sport et Budget (sombre, barre d'onglets en verre, fond animé).
   Pendant une recherche, l'onglet Films passe en LISTE compacte ; les films dont le titre correspond mais sans séance le
   jour choisi (avec les filtres) sont listés en dessous (« Pas de séance aujourd'hui ») avec « Prochaine séance : <jour> › »
   (`offDayMatches`, `data-open-movie` : change de jour ET ouvre la fiche). Film introuvable de la semaine : message clair.
+- Écrans vides (v20) : bouton « Prochaine séance : <jour> › » = premier jour où il reste VRAIMENT une séance avec les
+  filtres actuels (`nextDayWith`, film / cinéma / page), et non plus simplement le jour suivant.
 - Rayon « Près de moi » : 2, 5, 10, 20, 30, 50 km (demande de l'utilisateur : plus que 20 km).
 - `.github/workflows/apercu.yml` (lancement à la main) : republie le code de `main` avec les dernières séances du
   cache du robot ; la vieille copie de la branche `apercu-data` (16 nov.) ne sert que si le cache est vide.
